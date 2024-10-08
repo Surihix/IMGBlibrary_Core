@@ -14,8 +14,9 @@ namespace IMGBlibrary_Core.Repack
         /// <param name="imgHeaderBlockFile">Header Block file path. should have the GTEX chunk.</param>
         /// <param name="outImgbFile">IMGB file path. the file has to be present.</param>
         /// <param name="extractedIMGBdir">Path to the directory where the image files are present.</param>
+        /// <param name="imgbPlatform">Platform of the header block file.</param>
         /// <param name="showLog">Determine whether to show more messages related to this method's process.</param>
-        public static void RepackIMGBType1(string imgHeaderBlockFile, string outImgbFile, string extractedIMGBdir, bool showLog)
+        public static void RepackIMGBType1(string imgHeaderBlockFile, string outImgbFile, string extractedIMGBdir, IMGBEnums.Platforms imgbPlatform, bool showLog)
         {
             var imgbVars = new IMGBVariables
             {
@@ -43,6 +44,18 @@ namespace IMGBlibrary_Core.Repack
                 return;
             }
 
+            if (imgbPlatform == IMGBEnums.Platforms.ps3)
+            {
+                SharedMethods.DisplayLogMessage("Detected ps3 version image file. imgb repacking is not supported.", showLog);
+                return;
+            }
+
+            if (imgbPlatform == IMGBEnums.Platforms.x360)
+            {
+                SharedMethods.DisplayLogMessage("Detected xbox 360 version image file. imgb repacking is not supported.", showLog);
+                return;
+            }
+
 
             // Open the IMGB file and start repacking
             // the images according to the image type
@@ -62,7 +75,6 @@ namespace IMGBlibrary_Core.Repack
                     // Cubemap type 
                     // Type 5 is for PS3
                     case 1:
-                    case 5:
                         IMGBRepack1Types.RepackCubemapType1(imgHeaderBlockFile, extractedIMGBdir, imgbVars, imgbStream);
                         break;
 
