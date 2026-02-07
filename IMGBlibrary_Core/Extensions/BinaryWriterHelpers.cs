@@ -1,5 +1,14 @@
-﻿internal static class BinaryWriterHelpers
+﻿/// <summary>
+/// Provides endianness for BinaryWriter methods.
+/// </summary>
+internal static class BinaryWriterHelpers
 {
+    /// <summary>
+    /// Writes a two-byte signed integer to the current stream
+    /// and advances the stream position by two bytes.
+    /// </summary>
+    /// <param name="valueToWrite">The two-byte signed integer to write.</param>
+    /// <param name="isBigEndian">Indicates whether the bytes are written in Big Endian.</param>
     public static void WriteBytesUInt16(this BinaryWriter writerName, ushort valueToWrite, bool isBigEndian)
     {
         var writeValueBuffer = BitConverter.GetBytes(valueToWrite);
@@ -8,6 +17,12 @@
         writerName.Write(writeValueBuffer);
     }
 
+    /// <summary>
+    /// Writes a four-byte unsigned integer to the current stream 
+    /// and advances the stream position by four bytes.
+    /// </summary>
+    /// <param name="valueToWrite">The four-byte unsigned integer to write.</param>
+    /// <param name="isBigEndian">Indicates whether the bytes are written in Big Endian.</param>
     public static void WriteBytesUInt32(this BinaryWriter writerName, uint valueToWrite, bool isBigEndian)
     {
         var writeValueBuffer = BitConverter.GetBytes(valueToWrite);

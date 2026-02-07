@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <Company>Surihix</Company>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <FileVersion>1.0.0.1</FileVersion>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <Copyright>Copyright © Surihix 2026</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
