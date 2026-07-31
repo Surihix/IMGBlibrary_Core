@@ -1,8 +1,6 @@
-﻿using IMGBlibrary_Core.Support;
-
-namespace IMGBlibrary_Core.Unpack
+﻿namespace IMGBlibrary_Core.Support
 {
-    internal class PS3UnpackHelpers
+    internal class PS3Helpers
     {
         public static void ProcessPS3ImageData(ref bool doneCopying, GTEX gtex, uint mipSize, FileStream imgbStream, BinaryWriter ddsWriter)
         {

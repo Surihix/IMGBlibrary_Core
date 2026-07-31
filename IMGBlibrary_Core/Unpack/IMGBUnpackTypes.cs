@@ -99,7 +99,7 @@ namespace IMGBlibrary_Core.Unpack
             if (Platform == IMGBFlags.Platforms.ps3)
             {
                 imgbStream.Position = mipStart;
-                PS3UnpackHelpers.ProcessPS3ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
+                PS3Helpers.ProcessPS3ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
             }
 
             // If the condition matches a win32 image file or a pixel format

@@ -55,19 +55,19 @@ namespace IMGBlibrary_Core.Load
                     // Type 4 is for console versions
                     case 0:
                     case 4:
-                        ddsData = IMGBLoadTypes.UnpackClassic(imgHeaderBlockFile, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockFile, gtex, imgbStream);
                         break;
 
                     // Cubemap type 
                     // Type 5 is for console versions
                     case 1:
                     case 5:
-                        ddsData = IMGBLoadTypes.UnpackCubemap(imgHeaderBlockFile, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockFile, gtex, imgbStream);
                         break;
 
                     // Volumemap type
                     case 2:
-                        ddsData = IMGBLoadTypes.UnpackVolumemap(imgHeaderBlockFile, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockFile, gtex, imgbStream);
                         break;
                 }
             }
