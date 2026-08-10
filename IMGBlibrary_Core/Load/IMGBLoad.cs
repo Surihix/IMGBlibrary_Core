@@ -10,15 +10,16 @@ namespace IMGBlibrary_Core.Load
         /// <summary>
         /// Use for unpacking image files.
         /// </summary>
-        /// <param name="imgHeaderBlockFile">Header Block file path. should have the GTEX chunk.</param>
+        /// <param name="imgHeaderBlockData">Header Block data. should have the GTEX chunk.</param>
+        /// <param name="imgHeaderBlockName">Header Block name. should have a valid header block extension.</param>
         /// <param name="imgbFile">IMGB file path. the file has to be present.</param>
         /// <param name="imgbPlatform">Platform of the header block file.</param>
         /// <param name="showLog">Determine whether to show more messages related to this method's process.</param>
-        public static byte[] LoadIMGB(string imgHeaderBlockFile, string imgbFile, IMGBFlags.Platforms imgbPlatform, bool showLog)
+        public static byte[] LoadIMGB(byte[] imgHeaderBlockData, string imgHeaderBlockName, string imgbFile, IMGBFlags.Platforms imgbPlatform, bool showLog)
         {
             var ddsData = Array.Empty<byte>();
 
-            var gtex = SharedMethods.GetGTEXInfo(imgHeaderBlockFile);
+            var gtex = SharedMethods.GetGTEXInfo(imgHeaderBlockData, Path.GetFileName(imgHeaderBlockName));
 
             if (!gtex.IsValid)
             {
@@ -55,19 +56,19 @@ namespace IMGBlibrary_Core.Load
                     // Type 4 is for console versions
                     case 0:
                     case 4:
-                        ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockFile, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream);
                         break;
 
                     // Cubemap type 
                     // Type 5 is for console versions
                     case 1:
                     case 5:
-                        ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockFile, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream);
                         break;
 
                     // Volumemap type
                     case 2:
-                        ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockFile, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockData, gtex, imgbStream);
                         break;
                 }
             }

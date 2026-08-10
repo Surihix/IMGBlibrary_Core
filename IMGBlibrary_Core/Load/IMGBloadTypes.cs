@@ -7,11 +7,11 @@ namespace IMGBlibrary_Core.Load
         public static IMGBFlags.Platforms Platform { get; set; }
 
         #region Classic type
-        public static byte[] LoadClassic(string imgHeaderBlockFile, GTEX gtex, FileStream imgbStream)
+        public static byte[] LoadClassic(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
         {
             var loadedData = Array.Empty<byte>();
 
-            using (var gtexReader = new BinaryReader(File.Open(imgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
+            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
             {
                 using (var ddsStream = new MemoryStream())
                 {
@@ -40,11 +40,11 @@ namespace IMGBlibrary_Core.Load
 
 
         #region Cubemap type
-        public static byte[] LoadCubemap(string imgHeaderBlockFile, GTEX gtex, FileStream imgbStream)
+        public static byte[] LoadCubemap(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
         {
             var loadedData = Array.Empty<byte>();
 
-            using (var gtexReader = new BinaryReader(File.Open(imgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
+            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
             {
                 using (var ddsStream = new MemoryStream())
                 {
@@ -73,16 +73,11 @@ namespace IMGBlibrary_Core.Load
 
 
         #region Volumemap type
-        public static byte[] LoadVolumemap(string imgHeaderBlockFile, GTEX gtex, FileStream imgbStream)
+        public static byte[] LoadVolumemap(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
         {
             var loadedData = Array.Empty<byte>();
 
-            if (gtex.MipCount > 1)
-            {
-                SharedMethods.DisplayLogMessage("Detected more than one mip. mip 0 alone would be loaded", true);
-            }
-
-            using (var gtexReader = new BinaryReader(File.Open(imgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
+            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
             {
                 using (var ddsStream = new MemoryStream())
                 {

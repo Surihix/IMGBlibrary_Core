@@ -17,7 +17,7 @@ namespace IMGBlibrary_Core.Unpack
         /// <param name="showLog">Determine whether to show more messages related to this method's process.</param>
         public static void UnpackIMGB(string imgHeaderBlockFile, string imgbFile, string extractIMGBdir, IMGBFlags.Platforms imgbPlatform, bool showLog)
         {
-            var gtex = SharedMethods.GetGTEXInfo(imgHeaderBlockFile);
+            var gtex = SharedMethods.GetGTEXInfo(File.ReadAllBytes(imgHeaderBlockFile), Path.GetFileName(imgHeaderBlockFile));
 
             if (!gtex.IsValid)
             {

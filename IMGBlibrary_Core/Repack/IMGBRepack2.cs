@@ -29,7 +29,7 @@ namespace IMGBlibrary_Core.Repack
                 return;
             }
 
-            var gtex = SharedMethods.GetGTEXInfo(imgHeaderBlockFile);
+            var gtex = SharedMethods.GetGTEXInfo(File.ReadAllBytes(imgHeaderBlockFile), Path.GetFileName(imgHeaderBlockFile));
 
             if (!gtex.IsValid)
             {

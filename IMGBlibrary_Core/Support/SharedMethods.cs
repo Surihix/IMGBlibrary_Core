@@ -12,14 +12,14 @@ namespace IMGBlibrary_Core.Support
             }
         }
 
-        public static GTEX GetGTEXInfo(string inImgHeaderBlockFile)
+        public static GTEX GetGTEXInfo(byte[] inImgHeaderBlockData, string inImgHeaderBlockName)
         {
             var gtex = new GTEX()
             {
-                ImageName = Path.GetFileNameWithoutExtension(inImgHeaderBlockFile)
+                ImageName = Path.GetFileNameWithoutExtension(inImgHeaderBlockName)
             };
 
-            var offsetFound = GetGTEXChunkOffset(inImgHeaderBlockFile);
+            var offsetFound = GetGTEXChunkOffset(inImgHeaderBlockData);
 
             if (offsetFound == -1)
             {
@@ -30,25 +30,24 @@ namespace IMGBlibrary_Core.Support
             gtex.IsValid = true;
             gtex.GTEXOffset = (uint)offsetFound;
 
-            GetGTEXData(inImgHeaderBlockFile, gtex);
+            GetGTEXData(inImgHeaderBlockData, gtex);
 
             return gtex;
         }
 
-        private static int GetGTEXChunkOffset(string inImgHeaderBlockFile)
+        private static int GetGTEXChunkOffset(byte[] inImgHeaderBlockData)
         {
             int offset = -1;
             const string gtexChunkMagic = "GTEX";
 
             var readBuffer = new byte[4];
-            var headerBlockBuffer = File.ReadAllBytes(inImgHeaderBlockFile);
-            var limitPos = headerBlockBuffer.Length - 3;
+            var limitPos = inImgHeaderBlockData.Length - 3;
 
-            for (int i = 0; i < headerBlockBuffer.Length; i++)
+            for (int i = 0; i < inImgHeaderBlockData.Length; i++)
             {
                 if (i != limitPos)
                 {
-                    Array.ConstrainedCopy(headerBlockBuffer, i, readBuffer, 0, 4);
+                    Array.ConstrainedCopy(inImgHeaderBlockData, i, readBuffer, 0, 4);
 
                     if (Encoding.ASCII.GetString(readBuffer) == gtexChunkMagic)
                     {
@@ -61,9 +60,9 @@ namespace IMGBlibrary_Core.Support
             return offset;
         }
 
-        private static void GetGTEXData(string inImgHeaderBlockFile, GTEX gtex)
+        private static void GetGTEXData(byte[] inImgHeaderBlockData, GTEX gtex)
         {
-            using (var gtexReader = new BinaryReader(File.Open(inImgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
+            using (var gtexReader = new BinaryReader(new MemoryStream(inImgHeaderBlockData)))
             {
                 _ = gtexReader.BaseStream.Position = gtex.GTEXOffset + 4;
                 gtex.Version = gtexReader.ReadByte();
