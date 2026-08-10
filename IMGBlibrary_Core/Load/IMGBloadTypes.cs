@@ -1,4 +1,5 @@
 ﻿using IMGBlibrary_Core.Support;
+using IMGBlibrary_Core.Unpack;
 
 namespace IMGBlibrary_Core.Load
 {
@@ -17,6 +18,8 @@ namespace IMGBlibrary_Core.Load
                 {
                     using (var ddsWriter = new BinaryWriter(ddsStream))
                     {
+                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
 
                         for (int i = 0; i < gtex.MipCount; i++)
@@ -50,6 +53,8 @@ namespace IMGBlibrary_Core.Load
                 {
                     using (var ddsWriter = new BinaryWriter(ddsStream))
                     {
+                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
 
                         for (int i = 0; i < gtex.MipCount * 6; i++)
@@ -83,6 +88,8 @@ namespace IMGBlibrary_Core.Load
                 {
                     using (var ddsWriter = new BinaryWriter(ddsStream))
                     {
+                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
                         var mipStart = gtexReader.ReadBytesUInt32(true);
                         var mipSize = gtexReader.ReadBytesUInt32(true);
