@@ -50,6 +50,12 @@ namespace IMGBlibrary_Core.Load
             {
                 IMGBLoadTypes.Platform = imgbPlatform;
 
+                if (imgbPlatform == IMGBFlags.Platforms.x360)
+                {
+                    X360Helpers.MipWidth = gtex.Width;
+                    X360Helpers.MipHeight = gtex.Height;
+                }
+
                 switch (gtex.Type)
                 {
                     // Classic type

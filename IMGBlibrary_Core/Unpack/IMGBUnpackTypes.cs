@@ -102,6 +102,12 @@ namespace IMGBlibrary_Core.Unpack
                 PS3Helpers.ProcessPS3ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
             }
 
+            if (Platform == IMGBFlags.Platforms.x360)
+            {
+                imgbStream.Position = mipStart;
+                X360Helpers.ProcessX360ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
+            }
+
             // If the condition matches a win32 image file or a pixel format
             // that does not need anything specific done, then copy the data
             // directly to the final dds file.
