@@ -57,12 +57,23 @@ namespace IMGBlibrary_Core.Load
 
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
 
-                        for (int i = 0; i < gtex.MipCount * 6; i++)
+                        uint mipStart;
+                        uint mipSize;
+                        switch (Platform)
                         {
-                            var mipStart = gtexReader.ReadBytesUInt32(true);
-                            var mipSize = gtexReader.ReadBytesUInt32(true);
+                            case IMGBFlags.Platforms.win32:
+                            case IMGBFlags.Platforms.ps3:
+                                for (int i = 0; i < gtex.MipCount * 6; i++)
+                                {
+                                    mipStart = gtexReader.ReadBytesUInt32(true);
+                                    mipSize = gtexReader.ReadBytesUInt32(true);
 
-                            CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
+                                    CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
+                                }
+                                break;
+
+                            case IMGBFlags.Platforms.x360:
+                                break;
                         }
 
                         ddsStream.Position = 0;

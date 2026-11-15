@@ -25,7 +25,7 @@
             // color correct the data (if format is 3 or 4) and
             // copy the data to the final dds file.
             var isSwizzled = false;
-            if (gtex.Type == 4)
+            if (gtex.Type == 4 || gtex.Type == 5)
             {
                 isSwizzled = true;
             }
@@ -85,7 +85,14 @@
 
             if (factorPadding)
             {
-
+                using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
+                {
+                    using (var adjustedMipStream = new MemoryStream())
+                    {
+                        adjustedMipStream.Position = 0;
+                        adjustedMipData = adjustedMipStream.ToArray();
+                    }
+                }
             }
             else
             {

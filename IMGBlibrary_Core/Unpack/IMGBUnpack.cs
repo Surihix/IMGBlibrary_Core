@@ -25,11 +25,6 @@ namespace IMGBlibrary_Core.Unpack
                 return;
             }
 
-            if (imgbPlatform == IMGBFlags.Platforms.x360)
-            {
-                SharedMethods.DisplayLogMessage("Platform set to x360. extracted image file(s) will not be unswizzled.", true);
-            }
-
             SharedMethods.DisplayLogMessage($"Image Format Value: {gtex.Format}", showLog);
             SharedMethods.DisplayLogMessage($"Image MipCount: {gtex.MipCount}", showLog);
             SharedMethods.DisplayLogMessage($"Image Type Value: {gtex.Type}", showLog);

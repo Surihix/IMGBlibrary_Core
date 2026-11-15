@@ -66,7 +66,7 @@ namespace IMGBlibrary_Core.Support
             {
                 _ = gtexReader.BaseStream.Position = gtex.GTEXOffset + 4;
                 gtex.Version = gtexReader.ReadByte();
-                gtex.UnkFlag = gtexReader.ReadByte();
+                gtex.PlatformFlag = gtexReader.ReadByte();
                 gtex.Format = gtexReader.ReadByte();
                 gtex.MipCount = gtexReader.ReadByte();
                 gtex.UnkFlag2 = gtexReader.ReadByte();

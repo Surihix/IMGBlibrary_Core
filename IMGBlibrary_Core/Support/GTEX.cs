@@ -6,7 +6,7 @@
         public bool IsValid;
         public uint GTEXOffset;
         public byte Version;
-        public byte UnkFlag;
+        public byte PlatformFlag;   // caution with using this
         public byte Format;
         public byte MipCount;
         public byte UnkFlag2;
