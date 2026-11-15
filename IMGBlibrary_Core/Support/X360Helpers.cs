@@ -14,6 +14,12 @@
 
             var adjustedMipData = AdjustMipData(gtex, rawMipData);
 
+            // Remove this after padding is sorted :(
+            if (adjustedMipData.Length == 0)
+            {
+                return;
+            }
+
             // If the conditions match a swizzled x360 image,
             // then unswizzle the image data, endian swap data,
             // color correct the data (if format is 3 or 4) and
@@ -53,26 +59,38 @@
 
                 doneCopying = true;
             }
+
+            // If the condition match a x360 pixel format 24, 25, or 26 image, 
+            // without swizzling, then endian swap the data, and copy the
+            // data to the final dds file.
+            if (!doneCopying)
+            {
+                adjustedMipData = XEndian16(adjustedMipData);
+                ddsWriter.Write(adjustedMipData);
+
+                doneCopying = true;
+            }
         }
 
         private static byte[] AdjustMipData(GTEX gtex, byte[] mipData)
         {
             var adjustedMipData = Array.Empty<byte>();
 
-            var strideLength = 0;
+            var factorPadding = false;
 
-            switch (gtex.Format)
+            if (MipWidth % 128 != 0)
             {
-                case 3:
-                case 4:
-                    break;
+                factorPadding = true;
+            }
 
-                case 24:
-                    break;
+            if (factorPadding)
+            {
 
-                case 25:
-                case 26:
-                    break;
+            }
+            else
+            {
+                adjustedMipData = new byte[mipData.Length];
+                Array.Copy(mipData, adjustedMipData, mipData.Length);
             }
 
             return adjustedMipData;
@@ -173,21 +191,20 @@
             return destData;
         }
 
-        private static byte[] ColorAsBGRA(byte[] unSwizzledBufferVar)
+        private static byte[] ColorAsBGRA(byte[] mipData)
         {
-            var correctedColors = new byte[unSwizzledBufferVar.Length];
+            var correctedColors = new byte[mipData.Length];
 
             using (MemoryStream unSwizzledStream = new MemoryStream())
             {
-                unSwizzledStream.Write(unSwizzledBufferVar, 0, unSwizzledBufferVar.Length);
+                unSwizzledStream.Write(mipData, 0, mipData.Length);
                 unSwizzledStream.Seek(0, SeekOrigin.Begin);
 
                 using (BinaryReader unSwizzledReader = new BinaryReader(unSwizzledStream))
                 {
-
                     using (MemoryStream adjustedColorStream = new MemoryStream())
                     {
-                        adjustedColorStream.Write(unSwizzledBufferVar, 0, unSwizzledBufferVar.Length);
+                        adjustedColorStream.Write(mipData, 0, mipData.Length);
                         adjustedColorStream.Seek(0, SeekOrigin.Begin);
 
                         using (BinaryWriter adjustedColorWriter = new BinaryWriter(adjustedColorStream))
@@ -195,13 +212,13 @@
                             var readPos = 0;
                             var writePos = 0;
 
-                            for (int p = 0; p < unSwizzledBufferVar.Length; p++)
+                            for (int p = 0; p < mipData.Length; p++)
                             {
                                 unSwizzledReader.BaseStream.Position = readPos;
-                                var alpha = unSwizzledReader.ReadByte();
                                 var red = unSwizzledReader.ReadByte();
-                                var green = unSwizzledReader.ReadByte();
+                                var alpha = unSwizzledReader.ReadByte();
                                 var blue = unSwizzledReader.ReadByte();
+                                var green = unSwizzledReader.ReadByte();
 
                                 adjustedColorWriter.BaseStream.Position = writePos;
                                 adjustedColorWriter.Write(blue);
@@ -209,7 +226,7 @@
                                 adjustedColorWriter.Write(red);
                                 adjustedColorWriter.Write(alpha);
 
-                                if (readPos < (unSwizzledBufferVar.Length - 4))
+                                if (readPos < (mipData.Length - 4))
                                 {
                                     readPos += 4;
                                     writePos += 4;
