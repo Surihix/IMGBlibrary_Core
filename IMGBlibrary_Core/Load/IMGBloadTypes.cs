@@ -39,6 +39,14 @@ namespace IMGBlibrary_Core.Load
             SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}.dds", true);
             return loadedData;
         }
+
+        public static byte[] LoadClassicX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
+        {
+            var loadedData = Array.Empty<byte>();
+
+            SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}.dds", true);
+            return loadedData;
+        }
         #endregion
 
 
@@ -81,6 +89,14 @@ namespace IMGBlibrary_Core.Load
                     }
                 }
             }
+
+            SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}_cbmap.dds", true);
+            return loadedData;
+        }
+
+        private static byte[] LoadCubemapX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
+        {
+            var loadedData = Array.Empty<byte>();
 
             SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}_cbmap.dds", true);
             return loadedData;

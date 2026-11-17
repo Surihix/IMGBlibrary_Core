@@ -31,6 +31,11 @@ namespace IMGBlibrary_Core.Unpack
                 SharedMethods.DisplayLogMessage("Unpacked " + currentDDSfile, true);
             }
         }
+
+        public static void UnpackClassicX360(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
+        {
+
+        }
         #endregion
 
 
@@ -69,6 +74,11 @@ namespace IMGBlibrary_Core.Unpack
 
                 SharedMethods.DisplayLogMessage("Unpacked " + currentDDSfile, true);
             }
+        }
+
+        public static void UnpackCubemapX360(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
+        {
+
         }
         #endregion
 
