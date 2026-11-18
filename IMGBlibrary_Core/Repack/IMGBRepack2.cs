@@ -14,26 +14,27 @@ namespace IMGBlibrary_Core.Repack
         /// <param name="imgHeaderBlockFile">Header Block file path. should have the GTEX chunk.</param>
         /// <param name="outImgbFile">IMGB file path. not mandatory for the file to be present.</param>
         /// <param name="extractedIMGBdir">Path to the directory where the image files are present.</param>
-        /// <param name="imgbPlatform">Platform of the header block file.</param>
-        public static void RepackIMGBType2(string imgHeaderBlockFile, string outImgbFile, string extractedIMGBdir, IMGBFlags.Platforms imgbPlatform)
+        public static void RepackIMGBType2(string imgHeaderBlockFile, string outImgbFile, string extractedIMGBdir)
         {
-            if (imgbPlatform == IMGBFlags.Platforms.ps3)
-            {
-                SharedMethods.DisplayLogMessage("Detected ps3 version image file. skipped image repacking.", true);
-                return;
-            }
-
-            if (imgbPlatform == IMGBFlags.Platforms.x360)
-            {
-                SharedMethods.DisplayLogMessage("Detected xbox 360 version image file. skipped image repacking.", true);
-                return;
-            }
-
             var gtex = SharedMethods.GetGTEXInfo(File.ReadAllBytes(imgHeaderBlockFile), Path.GetFileName(imgHeaderBlockFile));
 
             if (!gtex.IsValid)
             {
                 SharedMethods.DisplayLogMessage("Unable to find GTEX chunk. skipped image repacking.", true);
+                return;
+            }
+
+            var platform = (IMGBFlags.Platforms)gtex.Platform;
+
+            if (platform == IMGBFlags.Platforms.ps3)
+            {
+                SharedMethods.DisplayLogMessage("Detected ps3 version image file. skipped image repacking.", true);
+                return;
+            }
+
+            if (platform == IMGBFlags.Platforms.x360)
+            {
+                SharedMethods.DisplayLogMessage("Detected xbox 360 version image file. skipped image repacking.", true);
                 return;
             }
 

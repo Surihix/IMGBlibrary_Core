@@ -13,9 +13,8 @@ namespace IMGBlibrary_Core.Load
         /// <param name="imgHeaderBlockData">Header Block data. should have the GTEX chunk.</param>
         /// <param name="imgHeaderBlockName">Header Block name. should have a valid header block extension.</param>
         /// <param name="imgbFile">IMGB file path. the file has to be present.</param>
-        /// <param name="imgbPlatform">Platform of the header block file.</param>
         /// <param name="showLog">Determine whether to show more messages related to this method's process.</param>
-        public static byte[] LoadIMGB(byte[] imgHeaderBlockData, string imgHeaderBlockName, string imgbFile, IMGBFlags.Platforms imgbPlatform, bool showLog)
+        public static byte[] LoadIMGB(byte[] imgHeaderBlockData, string imgHeaderBlockName, string imgbFile, bool showLog)
         {
             var ddsData = Array.Empty<byte>();
 
@@ -33,42 +32,54 @@ namespace IMGBlibrary_Core.Load
             SharedMethods.DisplayLogMessage($"Image Width: {gtex.Width}", showLog);
             SharedMethods.DisplayLogMessage($"Image Height: {gtex.Height}", showLog);
 
-            if (!SharedMethods.CheckGTEXFormatAndType(gtex))
+            if (!SharedMethods.CheckGTEXValues(gtex))
             {
-                SharedMethods.DisplayLogMessage("Detected unknown format or type. skipped image loading.", true);
+                SharedMethods.DisplayLogMessage("Detected unknown platform or image format or image type. skipped image loading.", true);
                 return ddsData;
             }
+
+            var platform = (IMGBFlags.Platforms)gtex.Platform;
+            var type = (IMGBFlags.Types)gtex.Type;
 
             // Open the IMGB file and start loading
             // the images according to the image type
             using (var imgbStream = new FileStream(imgbFile, FileMode.Open, FileAccess.ReadWrite))
             {
-                IMGBLoadTypes.Platform = imgbPlatform;
+                IMGBLoadTypes.Platform = platform;
 
-                if (imgbPlatform == IMGBFlags.Platforms.x360)
+                if (platform == IMGBFlags.Platforms.x360)
                 {
                     X360Helpers.MipWidth = gtex.Width;
                     X360Helpers.MipHeight = gtex.Height;
                 }
 
-                switch (gtex.Type)
+                switch (type)
                 {
-                    // Classic type
-                    // Type 4 is for console versions
-                    case 0:
-                    case 4:
-                        ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream);
+                    case IMGBFlags.Types.classic:
+                    case IMGBFlags.Types.classic_console:
+                        if (platform == IMGBFlags.Platforms.x360)
+                        {
+                            ddsData = IMGBLoadTypes.LoadClassicX360(imgHeaderBlockData, gtex, imgbStream);
+                        }
+                        else
+                        {
+                            ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream);
+                        }
                         break;
 
-                    // Cubemap type 
-                    // Type 5 is for console versions
-                    case 1:
-                    case 5:
-                        ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream);
+                    case IMGBFlags.Types.cubemap:
+                    case IMGBFlags.Types.cubemap_console:
+                        if (platform == IMGBFlags.Platforms.x360)
+                        {
+                            ddsData = IMGBLoadTypes.LoadCubemapX360(imgHeaderBlockData, gtex, imgbStream);
+                        }
+                        else
+                        {
+                            ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream);
+                        }
                         break;
 
-                    // Volumemap type
-                    case 2:
+                    case IMGBFlags.Types.volumemap:
                         ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockData, gtex, imgbStream);
                         break;
                 }

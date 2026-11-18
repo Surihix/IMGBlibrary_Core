@@ -94,7 +94,7 @@ namespace IMGBlibrary_Core.Load
             return loadedData;
         }
 
-        private static byte[] LoadCubemapX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
+        public static byte[] LoadCubemapX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
         {
             var loadedData = Array.Empty<byte>();
 

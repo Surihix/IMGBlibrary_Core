@@ -66,10 +66,10 @@ namespace IMGBlibrary_Core.Support
             {
                 _ = gtexReader.BaseStream.Position = gtex.GTEXOffset + 4;
                 gtex.Version = gtexReader.ReadByte();
-                gtex.PlatformFlag = gtexReader.ReadByte();
+                gtex.Platform = gtexReader.ReadByte();
                 gtex.Format = gtexReader.ReadByte();
                 gtex.MipCount = gtexReader.ReadByte();
-                gtex.UnkFlag2 = gtexReader.ReadByte();
+                gtex.UnkFlag = gtexReader.ReadByte();
                 gtex.Type = gtexReader.ReadByte();
                 gtex.Width = gtexReader.ReadBytesUInt16(true);
                 gtex.Height = gtexReader.ReadBytesUInt16(true);
@@ -79,11 +79,12 @@ namespace IMGBlibrary_Core.Support
         }
 
 
+        private static readonly byte[] GTEXPlatformVales = new byte[] { 1, 2, 3 };
         private static readonly byte[] GTEXFormatValues = new byte[] { 3, 4, 24, 25, 26 };
         private static readonly byte[] GTEXTypeValues = new byte[] { 0, 4, 1, 5, 2 };
-        public static bool CheckGTEXFormatAndType(GTEX gtex)
+        public static bool CheckGTEXValues(GTEX gtex)
         {
-            if (GTEXFormatValues.Contains(gtex.Format) && GTEXTypeValues.Contains(gtex.Type))
+            if (GTEXPlatformVales.Contains(gtex.Platform) && GTEXFormatValues.Contains(gtex.Format) && GTEXTypeValues.Contains(gtex.Type))
             {
                 return true;
             }
