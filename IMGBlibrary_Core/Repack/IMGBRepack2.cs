@@ -24,15 +24,15 @@ namespace IMGBlibrary_Core.Repack
                 return;
             }
 
-            var platform = (IMGBFlags.Platforms)gtex.Platform;
+            SharedMethods.LoadGTEXFlags(gtex);
 
-            if (platform == IMGBFlags.Platforms.ps3)
+            if (gtex.Platform == IMGBFlags.Platforms.ps3)
             {
                 SharedMethods.DisplayLogMessage("Detected ps3 version image file. skipped image repacking.", true);
                 return;
             }
 
-            if (platform == IMGBFlags.Platforms.x360)
+            if (gtex.Platform == IMGBFlags.Platforms.x360)
             {
                 SharedMethods.DisplayLogMessage("Detected xbox 360 version image file. skipped image repacking.", true);
                 return;

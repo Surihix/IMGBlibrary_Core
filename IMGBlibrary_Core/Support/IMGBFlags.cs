@@ -50,7 +50,7 @@
         /// <summary>
         /// Use for setting the image format from the header block file.
         /// </summary>
-        public enum Formats
+        public enum ImageFormats
         {
             /// <summary>
             /// Uncompressed DDS (can have mipmaps)
@@ -81,7 +81,7 @@
         /// <summary>
         /// Use for setting the image type from the header block file.
         /// </summary>
-        public enum Types
+        public enum ImageTypes
         {
             /// <summary>
             /// Normal image

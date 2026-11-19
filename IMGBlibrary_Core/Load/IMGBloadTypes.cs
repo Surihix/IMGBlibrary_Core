@@ -5,8 +5,6 @@ namespace IMGBlibrary_Core.Load
 {
     internal class IMGBLoadTypes
     {
-        public static IMGBFlags.Platforms Platform { get; set; }
-
         #region Classic type
         public static byte[] LoadClassic(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
         {
@@ -65,23 +63,12 @@ namespace IMGBlibrary_Core.Load
 
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
 
-                        uint mipStart;
-                        uint mipSize;
-                        switch (Platform)
+                        for (int i = 0; i < gtex.MipCount * 6; i++)
                         {
-                            case IMGBFlags.Platforms.win32:
-                            case IMGBFlags.Platforms.ps3:
-                                for (int i = 0; i < gtex.MipCount * 6; i++)
-                                {
-                                    mipStart = gtexReader.ReadBytesUInt32(true);
-                                    mipSize = gtexReader.ReadBytesUInt32(true);
+                            var mipStart = gtexReader.ReadBytesUInt32(true);
+                            var mipSize = gtexReader.ReadBytesUInt32(true);
 
-                                    CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
-                                }
-                                break;
-
-                            case IMGBFlags.Platforms.x360:
-                                break;
+                            CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
                         }
 
                         ddsStream.Position = 0;
@@ -140,13 +127,13 @@ namespace IMGBlibrary_Core.Load
         {
             var doneCopying = false;
 
-            if (Platform == IMGBFlags.Platforms.ps3)
+            if (gtex.Platform == IMGBFlags.Platforms.ps3)
             {
                 imgbStream.Position = mipStart;
                 PS3Helpers.ProcessPS3ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
             }
 
-            if (Platform == IMGBFlags.Platforms.x360)
+            if (gtex.Platform == IMGBFlags.Platforms.x360)
             {
                 imgbStream.Position = mipStart;
                 X360Helpers.ProcessX360ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);

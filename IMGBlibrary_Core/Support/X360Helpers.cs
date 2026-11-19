@@ -1,4 +1,6 @@
-﻿namespace IMGBlibrary_Core.Support
+﻿using static IMGBlibrary_Core.Support.IMGBFlags;
+
+namespace IMGBlibrary_Core.Support
 {
     internal class X360Helpers
     {
@@ -13,6 +15,7 @@
             imgbStream.Read(rawMipData, 0, rawMipData.Length);
 
             var adjustedMipData = AdjustMipData(gtex, rawMipData);
+            SetNextMipHeightWidth(gtex);
 
             // Remove this after padding is sorted :(
             if (adjustedMipData.Length == 0)
@@ -22,10 +25,10 @@
 
             // If the conditions match a swizzled x360 image,
             // then unswizzle the image data, endian swap data,
-            // color correct the data (if format is 3 or 4) and
-            // copy the data to the final dds file.
+            // color correct the data (if format is 'r8g8b8a8_mips' or 'r8g8b8a8_no_mips')
+            // and copy the data to the final dds file.
             var isSwizzled = false;
-            if (gtex.Type == 4 || gtex.Type == 5)
+            if (gtex.ImgType == ImageTypes.classic_console || gtex.ImgType == ImageTypes.cubemap_console)
             {
                 isSwizzled = true;
             }
@@ -34,7 +37,7 @@
                 var unSwizzledArray = ConvertToLinearTexture(adjustedMipData, gtex);
                 unSwizzledArray = XEndian16(unSwizzledArray);
 
-                if (gtex.Format == 3 || gtex.Format == 4)
+                if (gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4)
                 {
                     var correctedColorArray = ColorAsBGRA(unSwizzledArray);
                     ddsWriter.Write(correctedColorArray);
@@ -47,10 +50,11 @@
                 doneCopying = true;
             }
 
-            // If the conditions match a x360 pixel format 3 or 4 image,
-            // then endian swap the data, color correct the data and
-            // copy the data to the final dds file.
-            if (!doneCopying && gtex.Format == 3 || !doneCopying && gtex.Format == 4)
+            // If the conditions match pixel format 'r8g8b8a8_mips'
+            // or 'r8g8b8a8_no_mips', then endian swap the data,
+            // color correct the data and copy the data to
+            // the final dds file.
+            if (!doneCopying && gtex.ImgFormat == ImageFormats.r8g8b8a8_mips || !doneCopying && gtex.ImgFormat == ImageFormats.r8g8b8a8_no_mips)
             {
                 adjustedMipData = XEndian16(adjustedMipData);
 
@@ -60,9 +64,9 @@
                 doneCopying = true;
             }
 
-            // If the condition match a x360 pixel format 24, 25, or 26 image, 
-            // without swizzling, then endian swap the data, and copy the
-            // data to the final dds file.
+            // If the condition match pixel format 'dxt1', 'dxt3', or 'dxt5', 
+            // "without the swizzle type flag", then endian swap the data,
+            // and copy the data to the final dds file.
             if (!doneCopying)
             {
                 adjustedMipData = XEndian16(adjustedMipData);
@@ -101,6 +105,47 @@
             }
 
             return adjustedMipData;
+        }
+
+        private static void SetNextMipHeightWidth(GTEX gtex)
+        {
+            if (gtex.ImgFormat != ImageFormats.r8g8b8a8_mips)
+            {
+                MipHeight /= 2;
+
+                if (MipHeight < 4)
+                {
+                    MipHeight = 4;
+                }
+
+                MipWidth /= 2;
+
+                if (MipWidth < 4)
+                {
+                    MipWidth = 4;
+                }
+            }
+
+            if (gtex.ImgFormat == ImageFormats.r8g8b8a8_mips)
+            {
+                if (MipHeight == 1)
+                {
+                    MipHeight = 1;
+                }
+                else
+                {
+                    MipHeight /= 2;
+                }
+
+                if (MipWidth == 1)
+                {
+                    MipWidth = 1;
+                }
+                else
+                {
+                    MipWidth /= 2;
+                }
+            }
         }
 
         private static byte[] XEndian16(byte[] unswizzledBufferVar)
@@ -157,7 +202,7 @@
             int blockSize = 0;
             int texelPitch = 0;
 
-            switch (gtex.Format)
+            switch (gtex.ImgFormatFlag)
             {
                 case 24:
                     blockSize = 4;

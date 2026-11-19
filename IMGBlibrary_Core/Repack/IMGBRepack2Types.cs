@@ -27,24 +27,24 @@ namespace IMGBlibrary_Core.Repack
             gtex.Width = imageInfo.Width;
             gtex.Height = imageInfo.Height;
             gtex.MipCount = imageInfo.MipCount;
-            gtex.Format = imageInfo.PixelFormat;
+            gtex.ImgFormatFlag = imageInfo.PixelFormatFlag;
 
-            switch (imageInfo.Type)
+            switch (imageInfo.ImgTypeFlag)
             {
                 case 0:
-                    gtex.Type = 0;
+                    gtex.ImgTypeFlag = 0;
                     gtex.Depth = 1;
                     RepackClassicType(imgHeaderBlockFile, currentDDSfile, gtex, imgbStream);
                     break;
 
                 case 1:
-                    gtex.Type = 1;
+                    gtex.ImgTypeFlag = 1;
                     gtex.Depth = 1;
                     RepackCubemapType(imgHeaderBlockFile, currentDDSfile, gtex, imgbStream);
                     break;
 
                 case 2:
-                    gtex.Type = 2;
+                    gtex.ImgTypeFlag = 2;
                     gtex.Depth = imageInfo.Depth;
                     RepackVolumemap(imgHeaderBlockFile, currentDDSfile, gtex, imgbStream);
                     break;
@@ -86,15 +86,15 @@ namespace IMGBlibrary_Core.Repack
 
             if (currentDDSfile.EndsWith("_cbmap.dds"))
             {
-                imageInfo.Type = 1;
+                imageInfo.ImgTypeFlag = 1;
             }
             else if (currentDDSfile.EndsWith("_volume.dds"))
             {
-                imageInfo.Type = 2;
+                imageInfo.ImgTypeFlag = 2;
             }
             else
             {
-                imageInfo.Type = 0;
+                imageInfo.ImgTypeFlag = 0;
             }
 
             using (var ddsReader = new BinaryReader(File.Open(currentDDSfile, FileMode.Open, FileAccess.Read)))
@@ -115,24 +115,24 @@ namespace IMGBlibrary_Core.Repack
                     case "":
                         if (imageInfo.MipCount > 1)
                         {
-                            imageInfo.PixelFormat = 3;
+                            imageInfo.PixelFormatFlag = 3;
                         }
                         else
                         {
-                            imageInfo.PixelFormat = 4;
+                            imageInfo.PixelFormatFlag = 4;
                         }
                         break;
 
                     case "DXT1":
-                        imageInfo.PixelFormat = 24;
+                        imageInfo.PixelFormatFlag = 24;
                         break;
 
                     case "DXT3":
-                        imageInfo.PixelFormat = 25;
+                        imageInfo.PixelFormatFlag = 25;
                         break;
 
                     case "DXT5":
-                        imageInfo.PixelFormat = 26;
+                        imageInfo.PixelFormatFlag = 26;
                         break;
 
                     default:
@@ -151,7 +151,7 @@ namespace IMGBlibrary_Core.Repack
         {
             var headerBlockFileData = File.ReadAllBytes(imgHeaderBlockFile);
 
-            var mipInfoTableSize = gtex.Type == 1 ? (gtex.MipCount * 8) * 6 : gtex.MipCount * 8;
+            var mipInfoTableSize = gtex.ImgTypeFlag == 1 ? (gtex.MipCount * 8) * 6 : gtex.MipCount * 8;
             var mipInfoTableData = new byte[mipInfoTableSize];
 
             File.Delete(imgHeaderBlockFile);
@@ -171,13 +171,13 @@ namespace IMGBlibrary_Core.Repack
                 headerBlockUpdater.Write(headerBlockFileSize);
 
                 _ = headerBlockUpdater.BaseStream.Position = gtex.GTEXOffset + 6;
-                headerBlockUpdater.Write(gtex.Format);
+                headerBlockUpdater.Write(gtex.ImgFormatFlag);
 
                 _ = headerBlockUpdater.BaseStream.Position = gtex.GTEXOffset + 7;
                 headerBlockUpdater.Write(gtex.MipCount);
 
                 _ = headerBlockUpdater.BaseStream.Position = gtex.GTEXOffset + 9;
-                headerBlockUpdater.Write(gtex.Type);
+                headerBlockUpdater.Write(gtex.ImgTypeFlag);
                 headerBlockUpdater.WriteBytesUInt16(gtex.Width, true);
                 headerBlockUpdater.WriteBytesUInt16(gtex.Height, true);
                 headerBlockUpdater.WriteBytesUInt16(gtex.Depth, true);
@@ -188,7 +188,7 @@ namespace IMGBlibrary_Core.Repack
         {
             uint mipSize = 0;
 
-            switch (gtex.Format)
+            switch (gtex.ImgFormatFlag)
             {
                 case 3: // R8G8B8A8
                 case 4: // R8G8B8A8 with Mips
@@ -214,7 +214,7 @@ namespace IMGBlibrary_Core.Repack
 
         private static void NextMipHeightWidth(GTEX gtex, ref ushort nextMipHeight, ref ushort nextMipWidth)
         {
-            if (gtex.Format != 3)
+            if (gtex.ImgFormatFlag != 3)
             {
                 nextMipHeight = (ushort)(gtex.Height / 2);
                 gtex.Height = nextMipHeight;
@@ -233,7 +233,7 @@ namespace IMGBlibrary_Core.Repack
                 }
             }
 
-            if (gtex.Format == 3)
+            if (gtex.ImgFormatFlag == 3)
             {
                 if (gtex.Height == 1)
                 {

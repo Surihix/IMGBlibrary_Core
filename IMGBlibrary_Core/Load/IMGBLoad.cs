@@ -1,4 +1,5 @@
 ﻿using IMGBlibrary_Core.Support;
+using static IMGBlibrary_Core.Support.IMGBFlags;
 
 namespace IMGBlibrary_Core.Load
 {
@@ -26,38 +27,35 @@ namespace IMGBlibrary_Core.Load
                 return ddsData;
             }
 
-            SharedMethods.DisplayLogMessage($"Image Format Value: {gtex.Format}", showLog);
+            SharedMethods.DisplayLogMessage($"Image Format Value: {gtex.ImgFormatFlag}", showLog);
             SharedMethods.DisplayLogMessage($"Image MipCount: {gtex.MipCount}", showLog);
-            SharedMethods.DisplayLogMessage($"Image Type Value: {gtex.Type}", showLog);
+            SharedMethods.DisplayLogMessage($"Image Type Value: {gtex.ImgTypeFlag}", showLog);
             SharedMethods.DisplayLogMessage($"Image Width: {gtex.Width}", showLog);
             SharedMethods.DisplayLogMessage($"Image Height: {gtex.Height}", showLog);
 
-            if (!SharedMethods.CheckGTEXValues(gtex))
+            if (!SharedMethods.CheckGTEXFlags(gtex))
             {
                 SharedMethods.DisplayLogMessage("Detected unknown platform or image format or image type. skipped image loading.", true);
                 return ddsData;
             }
 
-            var platform = (IMGBFlags.Platforms)gtex.Platform;
-            var type = (IMGBFlags.Types)gtex.Type;
+            SharedMethods.LoadGTEXFlags(gtex);
 
             // Open the IMGB file and start loading
             // the images according to the image type
             using (var imgbStream = new FileStream(imgbFile, FileMode.Open, FileAccess.ReadWrite))
             {
-                IMGBLoadTypes.Platform = platform;
-
-                if (platform == IMGBFlags.Platforms.x360)
+                if (gtex.Platform == Platforms.x360)
                 {
                     X360Helpers.MipWidth = gtex.Width;
                     X360Helpers.MipHeight = gtex.Height;
                 }
 
-                switch (type)
+                switch (gtex.ImgType)
                 {
-                    case IMGBFlags.Types.classic:
-                    case IMGBFlags.Types.classic_console:
-                        if (platform == IMGBFlags.Platforms.x360)
+                    case ImageTypes.classic:
+                    case ImageTypes.classic_console:
+                        if (gtex.Platform == Platforms.x360)
                         {
                             ddsData = IMGBLoadTypes.LoadClassicX360(imgHeaderBlockData, gtex, imgbStream);
                         }
@@ -67,9 +65,9 @@ namespace IMGBlibrary_Core.Load
                         }
                         break;
 
-                    case IMGBFlags.Types.cubemap:
-                    case IMGBFlags.Types.cubemap_console:
-                        if (platform == IMGBFlags.Platforms.x360)
+                    case ImageTypes.cubemap:
+                    case ImageTypes.cubemap_console:
+                        if (gtex.Platform == Platforms.x360)
                         {
                             ddsData = IMGBLoadTypes.LoadCubemapX360(imgHeaderBlockData, gtex, imgbStream);
                         }
@@ -79,7 +77,7 @@ namespace IMGBlibrary_Core.Load
                         }
                         break;
 
-                    case IMGBFlags.Types.volumemap:
+                    case ImageTypes.volumemap:
                         ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockData, gtex, imgbStream);
                         break;
                 }

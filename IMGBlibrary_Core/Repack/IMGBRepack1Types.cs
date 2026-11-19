@@ -1,4 +1,5 @@
 ﻿using IMGBlibrary_Core.Support;
+using static IMGBlibrary_Core.Support.IMGBFlags;
 
 namespace IMGBlibrary_Core.Repack
 {
@@ -188,7 +189,7 @@ namespace IMGBlibrary_Core.Repack
                 var depth = ddsReader.ReadUInt32();
                 var mipCount = ddsReader.ReadUInt32();
 
-                if (gtex.Type == 2 && gtex.Depth != depth)
+                if (gtex.ImgType == ImageTypes.volumemap && gtex.Depth != depth)
                 {
                     SharedMethods.DisplayLogMessage("Volume texture's depth count in the dds file, does not match with the original image's depth count. skipped repacking image.", true);
                     return false;
@@ -212,15 +213,15 @@ namespace IMGBlibrary_Core.Repack
                         break;
 
                     case "DXT1":
-                        isValidPixelFormat = gtex.Format == 24;
+                        isValidPixelFormat = gtex.ImgFormat == ImageFormats.dxt1;
                         break;
 
                     case "DXT3":
-                        isValidPixelFormat = gtex.Format == 25;
+                        isValidPixelFormat = gtex.ImgFormat == ImageFormats.dxt3;
                         break;
 
                     case "DXT5":
-                        isValidPixelFormat = gtex.Format == 26;
+                        isValidPixelFormat = gtex.ImgFormat == ImageFormats.dxt5;
                         break;
                 }
 

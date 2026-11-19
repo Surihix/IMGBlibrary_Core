@@ -1,4 +1,6 @@
-﻿namespace IMGBlibrary_Core.Support
+﻿using static IMGBlibrary_Core.Support.IMGBFlags;
+
+namespace IMGBlibrary_Core.Support
 {
     internal class PS3Helpers
     {
@@ -8,7 +10,7 @@
             // then unswizzle the image data, color correct the data,
             // and copy the unswizzled image data to the final dds file.
             var isSwizzled = false;
-            if (gtex.Format == 4 && gtex.Type == 4)
+            if (gtex.ImgFormat == ImageFormats.r8g8b8a8_no_mips && gtex.ImgType == ImageTypes.classic_console)
             {
                 isSwizzled = true;
             }
@@ -24,15 +26,15 @@
                 doneCopying = true;
             }
 
-            // If the conditions match a ps3 pixel format 4 image
+            // If the conditions match pixel format 'r8g8b8a8_no_mips'
             // "without the swizzle type flag", then color correct the
             // data and copy the data to the final dds file.
-            var format4NoSwizzleFlag = false;
-            if (gtex.Format == 4 && gtex.Type == 0)
+            var noSwizzleFlag = false;
+            if (gtex.ImgFormat == ImageFormats.r8g8b8a8_no_mips && gtex.ImgType == ImageTypes.classic)
             {
-                format4NoSwizzleFlag = true;
+                noSwizzleFlag = true;
             }
-            if (!doneCopying && format4NoSwizzleFlag)
+            if (!doneCopying && noSwizzleFlag)
             {
                 var colorDataToCorrectArray = new byte[mipSize];
                 imgbStream.Read(colorDataToCorrectArray, 0, colorDataToCorrectArray.Length);
@@ -43,10 +45,10 @@
                 doneCopying = true;
             }
 
-            // If the conditions match a ps3 pixel format 3 or 4 image,
-            // then color correct the data and copy the data to the 
-            // final dds file.
-            if (!doneCopying && gtex.Format == 3 || !doneCopying && gtex.Format == 4)
+            // If the conditions match pixel format 'r8g8b8a8_mips'
+            // or 'r8g8b8a8_no_mips', then color correct the data and
+            // copy the data to the final dds file.
+            if (!doneCopying && gtex.ImgFormat == ImageFormats.r8g8b8a8_mips || !doneCopying && gtex.ImgFormat == ImageFormats.r8g8b8a8_no_mips)
             {
                 var colorDataToCorrectArray = new byte[mipSize];
                 imgbStream.Read(colorDataToCorrectArray, 0, colorDataToCorrectArray.Length);
