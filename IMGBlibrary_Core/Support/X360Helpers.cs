@@ -15,7 +15,6 @@ namespace IMGBlibrary_Core.Support
             imgbStream.Read(rawMipData, 0, rawMipData.Length);
 
             var adjustedMipData = AdjustMipData(gtex, rawMipData);
-            SetNextMipHeightWidth(gtex);
 
             // Remove this after padding is sorted :(
             if (adjustedMipData.Length == 0)
@@ -74,6 +73,8 @@ namespace IMGBlibrary_Core.Support
 
                 doneCopying = true;
             }
+
+            SetNextMipHeightWidth(gtex);
         }
 
         private static byte[] AdjustMipData(GTEX gtex, byte[] mipData)
@@ -202,19 +203,19 @@ namespace IMGBlibrary_Core.Support
             int blockSize = 0;
             int texelPitch = 0;
 
-            switch (gtex.ImgFormatFlag)
+            switch (gtex.ImgFormat)
             {
-                case 24:
+                case ImageFormats.dxt1:
                     blockSize = 4;
                     texelPitch = 8;
                     break;
-                case 25:
-                case 26:
+                case ImageFormats.dxt3:
+                case ImageFormats.dxt5:
                     blockSize = 4;
                     texelPitch = 16;
                     break;
-                case 3:
-                case 4:
+                case ImageFormats.r8g8b8a8_mips:
+                case ImageFormats.r8g8b8a8_no_mips:
                     blockSize = 1;
                     texelPitch = 4;
                     break;
