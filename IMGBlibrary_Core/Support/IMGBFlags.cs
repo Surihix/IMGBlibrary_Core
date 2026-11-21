@@ -55,12 +55,12 @@
             /// <summary>
             /// Uncompressed DDS (can have mipmaps)
             /// </summary>
-            r8g8b8a8_mips = 3,
+            r8g8b8a8 = 3,
 
             /// <summary>
             /// Uncompressed DDS (cannot have mipmaps)
             /// </summary>
-            r8g8b8a8_no_mips = 4,
+            r8g8b8a8_2 = 4,
 
             /// <summary>
             /// BC1 compression
@@ -89,7 +89,7 @@
             classic = 0,
 
             /// <summary>
-            /// DDS cubemap image (type present only on win32 version, x360 version indicates swizzled data)
+            /// DDS cubemap image (type present only on console versions. indicates swizzled data)
             /// </summary>
             cubemap = 1,
 
@@ -99,14 +99,14 @@
             volumemap = 2,
 
             /// <summary>
-            /// Normal image (type present only on ps3, x360. x360 version indicates swizzled data)
+            /// Normal image (type present only on console versions. indicates swizzled data)
             /// </summary>
-            classic_console = 4,
+            classic_swizzled = 4,
 
             /// <summary>
-            /// DDS cubemap image (type present only on consoles, x360 version indicates swizzled data)
+            /// DDS cubemap image (type present only on console versions. indicates swizzled data)
             /// </summary>
-            cubemap_console = 5
+            cubemap_swizzled = 5
         }
     }
 }

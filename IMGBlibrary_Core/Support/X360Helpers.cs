@@ -9,10 +9,8 @@ namespace IMGBlibrary_Core.Support
 
         public static void ProcessX360ImageData(ref bool doneCopying, GTEX gtex, uint mipSize, FileStream imgbStream, BinaryWriter ddsWriter)
         {
-            // Adjust mip data without copying
-            // the padding data
             var rawMipData = new byte[mipSize];
-            imgbStream.Read(rawMipData, 0, rawMipData.Length);
+            _ = imgbStream.Read(rawMipData, 0, rawMipData.Length);
 
             var adjustedMipData = AdjustMipData(gtex, rawMipData);
 
@@ -22,59 +20,34 @@ namespace IMGBlibrary_Core.Support
                 return;
             }
 
-            // If the conditions match a swizzled x360 image,
-            // then unswizzle the image data, endian swap data,
-            // color correct the data (if format is 'r8g8b8a8_mips' or 'r8g8b8a8_no_mips')
-            // and copy the data to the final dds file.
-            var isSwizzled = false;
-            if (gtex.ImgType == ImageTypes.classic_console || gtex.ImgType == ImageTypes.cubemap_console)
-            {
-                isSwizzled = true;
-            }
-            if (!doneCopying && isSwizzled)
-            {
-                var unSwizzledArray = ConvertToLinearTexture(adjustedMipData, gtex);
-                unSwizzledArray = XEndian16(unSwizzledArray);
+            var hasProcessed = false;
+            var isSwizzled = gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled;
 
-                if (gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4)
-                {
-                    var correctedColorArray = ColorAsBGRA(unSwizzledArray);
-                    ddsWriter.Write(correctedColorArray);
-                }
-                else
-                {
-                    ddsWriter.Write(unSwizzledArray);
-                }
-
-                doneCopying = true;
+            if (isSwizzled)
+            {
+                adjustedMipData = ConvertToLinearTexture(adjustedMipData, gtex);
+                hasProcessed = true;
             }
 
-            // If the conditions match pixel format 'r8g8b8a8_mips'
-            // or 'r8g8b8a8_no_mips', then endian swap the data,
-            // color correct the data and copy the data to
-            // the final dds file.
-            if (!doneCopying && gtex.ImgFormat == ImageFormats.r8g8b8a8_mips || !doneCopying && gtex.ImgFormat == ImageFormats.r8g8b8a8_no_mips)
+            adjustedMipData = XEndian16(adjustedMipData);
+
+            var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2;
+
+            if (colorAdjust)
             {
-                adjustedMipData = XEndian16(adjustedMipData);
-
-                var correctedColorArray = ColorAsBGRA(adjustedMipData);
-                ddsWriter.Write(correctedColorArray);
-
-                doneCopying = true;
+                adjustedMipData = AdjustColor(adjustedMipData);
             }
 
-            // If the condition match pixel format 'dxt1', 'dxt3', or 'dxt5', 
-            // "without the swizzle type flag", then endian swap the data,
-            // and copy the data to the final dds file.
-            if (!doneCopying)
+            if (hasProcessed)
             {
-                adjustedMipData = XEndian16(adjustedMipData);
                 ddsWriter.Write(adjustedMipData);
-
                 doneCopying = true;
-            }
 
-            SetNextMipHeightWidth(gtex);
+                if (gtex.MipCount > 1)
+                {
+                    SetNextMipHeightWidth(gtex);
+                }
+            }
         }
 
         private static byte[] AdjustMipData(GTEX gtex, byte[] mipData)
@@ -94,8 +67,7 @@ namespace IMGBlibrary_Core.Support
                 {
                     using (var adjustedMipStream = new MemoryStream())
                     {
-                        adjustedMipStream.Position = 0;
-                        adjustedMipData = adjustedMipStream.ToArray();
+
                     }
                 }
             }
@@ -106,47 +78,6 @@ namespace IMGBlibrary_Core.Support
             }
 
             return adjustedMipData;
-        }
-
-        private static void SetNextMipHeightWidth(GTEX gtex)
-        {
-            if (gtex.ImgFormat != ImageFormats.r8g8b8a8_mips)
-            {
-                MipHeight /= 2;
-
-                if (MipHeight < 4)
-                {
-                    MipHeight = 4;
-                }
-
-                MipWidth /= 2;
-
-                if (MipWidth < 4)
-                {
-                    MipWidth = 4;
-                }
-            }
-
-            if (gtex.ImgFormat == ImageFormats.r8g8b8a8_mips)
-            {
-                if (MipHeight == 1)
-                {
-                    MipHeight = 1;
-                }
-                else
-                {
-                    MipHeight /= 2;
-                }
-
-                if (MipWidth == 1)
-                {
-                    MipWidth = 1;
-                }
-                else
-                {
-                    MipWidth /= 2;
-                }
-            }
         }
 
         private static byte[] XEndian16(byte[] unswizzledBufferVar)
@@ -214,8 +145,8 @@ namespace IMGBlibrary_Core.Support
                     blockSize = 4;
                     texelPitch = 16;
                     break;
-                case ImageFormats.r8g8b8a8_mips:
-                case ImageFormats.r8g8b8a8_no_mips:
+                case ImageFormats.r8g8b8a8:
+                case ImageFormats.r8g8b8a8_2:
                     blockSize = 1;
                     texelPitch = 4;
                     break;
@@ -244,56 +175,91 @@ namespace IMGBlibrary_Core.Support
             return destData;
         }
 
-        private static byte[] ColorAsBGRA(byte[] mipData)
+        private static byte[] AdjustColor(byte[] mipData)
         {
-            var correctedColors = new byte[mipData.Length];
+            var adjustedColorsData = new byte[mipData.Length];
 
-            using (MemoryStream unSwizzledStream = new MemoryStream())
+            using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
             {
-                unSwizzledStream.Write(mipData, 0, mipData.Length);
-                unSwizzledStream.Seek(0, SeekOrigin.Begin);
-
-                using (BinaryReader unSwizzledReader = new BinaryReader(unSwizzledStream))
+                using (var adjustedColorStream = new MemoryStream())
                 {
-                    using (MemoryStream adjustedColorStream = new MemoryStream())
+                    adjustedColorStream.Write(mipData, 0, mipData.Length);
+                    adjustedColorStream.Seek(0, SeekOrigin.Begin);
+
+                    using (var adjustedColorWriter = new BinaryWriter(adjustedColorStream))
                     {
-                        adjustedColorStream.Write(mipData, 0, mipData.Length);
-                        adjustedColorStream.Seek(0, SeekOrigin.Begin);
+                        var readPos = 0;
+                        var writePos = 0;
 
-                        using (BinaryWriter adjustedColorWriter = new BinaryWriter(adjustedColorStream))
+                        for (int i = 0; i < mipData.Length; i++)
                         {
-                            var readPos = 0;
-                            var writePos = 0;
+                            mipDataReader.BaseStream.Position = readPos;
+                            var red = mipDataReader.ReadByte();
+                            var alpha = mipDataReader.ReadByte();
+                            var blue = mipDataReader.ReadByte();
+                            var green = mipDataReader.ReadByte();
 
-                            for (int p = 0; p < mipData.Length; p++)
+                            adjustedColorWriter.BaseStream.Position = writePos;
+                            adjustedColorWriter.Write(blue);
+                            adjustedColorWriter.Write(green);
+                            adjustedColorWriter.Write(red);
+                            adjustedColorWriter.Write(alpha);
+
+                            if (readPos < (mipData.Length - 4))
                             {
-                                unSwizzledReader.BaseStream.Position = readPos;
-                                var red = unSwizzledReader.ReadByte();
-                                var alpha = unSwizzledReader.ReadByte();
-                                var blue = unSwizzledReader.ReadByte();
-                                var green = unSwizzledReader.ReadByte();
-
-                                adjustedColorWriter.BaseStream.Position = writePos;
-                                adjustedColorWriter.Write(blue);
-                                adjustedColorWriter.Write(green);
-                                adjustedColorWriter.Write(red);
-                                adjustedColorWriter.Write(alpha);
-
-                                if (readPos < (mipData.Length - 4))
-                                {
-                                    readPos += 4;
-                                    writePos += 4;
-                                }
+                                readPos += 4;
+                                writePos += 4;
                             }
-
-                            adjustedColorStream.Seek(0, SeekOrigin.Begin);
-                            adjustedColorStream.Read(correctedColors, 0, correctedColors.Length);
                         }
+
+                        adjustedColorStream.Seek(0, SeekOrigin.Begin);
+                        adjustedColorStream.Read(adjustedColorsData, 0, adjustedColorsData.Length);
                     }
                 }
             }
 
-            return correctedColors;
+            return adjustedColorsData;
+        }
+
+        private static void SetNextMipHeightWidth(GTEX gtex)
+        {
+            if (gtex.ImgFormat == ImageFormats.dxt1 || gtex.ImgFormat == ImageFormats.dxt3 || gtex.ImgFormat == ImageFormats.dxt5)
+            {
+                MipHeight /= 2;
+
+                if (MipHeight < 4)
+                {
+                    MipHeight = 4;
+                }
+
+                MipWidth /= 2;
+
+                if (MipWidth < 4)
+                {
+                    MipWidth = 4;
+                }
+            }
+
+            if (gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2)
+            {
+                if (MipHeight == 1)
+                {
+                    MipHeight = 1;
+                }
+                else
+                {
+                    MipHeight /= 2;
+                }
+
+                if (MipWidth == 1)
+                {
+                    MipWidth = 1;
+                }
+                else
+                {
+                    MipWidth /= 2;
+                }
+            }
         }
     }
 }

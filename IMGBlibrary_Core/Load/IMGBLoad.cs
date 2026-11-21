@@ -45,6 +45,12 @@ namespace IMGBlibrary_Core.Load
             // the images according to the image type
             using (var imgbStream = new FileStream(imgbFile, FileMode.Open, FileAccess.ReadWrite))
             {
+                if (gtex.Platform == Platforms.ps3)
+                {
+                    PS3Helpers.MipWidth = gtex.Width;
+                    PS3Helpers.MipHeight = gtex.Height;
+                }
+
                 if (gtex.Platform == Platforms.x360)
                 {
                     X360Helpers.MipWidth = gtex.Width;
@@ -54,7 +60,7 @@ namespace IMGBlibrary_Core.Load
                 switch (gtex.ImgType)
                 {
                     case ImageTypes.classic:
-                    case ImageTypes.classic_console:
+                    case ImageTypes.classic_swizzled:
                         if (gtex.Platform == Platforms.x360)
                         {
                             ddsData = IMGBLoadTypes.LoadClassicX360(imgHeaderBlockData, gtex, imgbStream);
@@ -66,7 +72,7 @@ namespace IMGBlibrary_Core.Load
                         break;
 
                     case ImageTypes.cubemap:
-                    case ImageTypes.cubemap_console:
+                    case ImageTypes.cubemap_swizzled:
                         if (gtex.Platform == Platforms.x360)
                         {
                             ddsData = IMGBLoadTypes.LoadCubemapX360(imgHeaderBlockData, gtex, imgbStream);
