@@ -14,19 +14,17 @@ namespace IMGBlibrary_Core.Support
 
             var adjustedMipData = AdjustMipData(gtex, rawMipData);
 
-            // Remove this after padding is sorted :(
+            // Remove this after padding is sorted
             if (adjustedMipData.Length == 0)
             {
                 return;
             }
 
-            var hasProcessed = false;
             var isSwizzled = gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled;
 
             if (isSwizzled)
             {
                 adjustedMipData = ConvertToLinearTexture(adjustedMipData, gtex);
-                hasProcessed = true;
             }
 
             adjustedMipData = XEndian16(adjustedMipData);
@@ -38,15 +36,12 @@ namespace IMGBlibrary_Core.Support
                 adjustedMipData = AdjustColor(adjustedMipData);
             }
 
-            if (hasProcessed)
-            {
-                ddsWriter.Write(adjustedMipData);
-                doneCopying = true;
+            ddsWriter.Write(adjustedMipData);
+            doneCopying = true;
 
-                if (gtex.MipCount > 1)
-                {
-                    SetNextMipHeightWidth(gtex);
-                }
+            if (gtex.MipCount > 1)
+            {
+                SetNextMipHeightWidth(gtex);
             }
         }
 
@@ -54,14 +49,29 @@ namespace IMGBlibrary_Core.Support
         {
             var adjustedMipData = Array.Empty<byte>();
 
-            var factorPadding = false;
+            var hasPadding = false;
 
-            if (MipWidth % 128 != 0)
+            if (gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled)
             {
-                factorPadding = true;
+                if (MipWidth % 128 != 0)
+                {
+                    hasPadding = true;
+                }
+
+                if (MipHeight % 128 != 0)
+                {
+                    hasPadding = true;
+                }
+            }
+            else
+            {
+                if (MipWidth % 128 != 0)
+                {
+                    hasPadding = true;
+                }
             }
 
-            if (factorPadding)
+            if (hasPadding)
             {
                 using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
                 {

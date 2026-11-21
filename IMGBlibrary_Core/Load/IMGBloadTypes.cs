@@ -42,6 +42,31 @@ namespace IMGBlibrary_Core.Load
         {
             var loadedData = Array.Empty<byte>();
 
+            // remove and fix later
+            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
+            {
+                using (var ddsStream = new MemoryStream())
+                {
+                    using (var ddsWriter = new BinaryWriter(ddsStream))
+                    {
+                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+
+                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
+
+                        for (int i = 0; i < gtex.MipCount; i++)
+                        {
+                            var mipStart = gtexReader.ReadBytesUInt32(true);
+                            var mipSize = gtexReader.ReadBytesUInt32(true);
+
+                            CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
+                        }
+
+                        ddsStream.Position = 0;
+                        loadedData = ddsStream.ToArray();
+                    }
+                }
+            }
+
             SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}.dds", true);
             return loadedData;
         }
@@ -84,6 +109,31 @@ namespace IMGBlibrary_Core.Load
         public static byte[] LoadCubemapX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream)
         {
             var loadedData = Array.Empty<byte>();
+
+            // remove and fix later
+            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
+            {
+                using (var ddsStream = new MemoryStream())
+                {
+                    using (var ddsWriter = new BinaryWriter(ddsStream))
+                    {
+                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+
+                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
+
+                        for (int i = 0; i < gtex.MipCount * 6; i++)
+                        {
+                            var mipStart = gtexReader.ReadBytesUInt32(true);
+                            var mipSize = gtexReader.ReadBytesUInt32(true);
+
+                            CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
+                        }
+
+                        ddsStream.Position = 0;
+                        loadedData = ddsStream.ToArray();
+                    }
+                }
+            }
 
             SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}_cbmap.dds", true);
             return loadedData;
