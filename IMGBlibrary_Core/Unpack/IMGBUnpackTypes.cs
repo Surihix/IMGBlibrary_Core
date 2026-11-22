@@ -1,4 +1,5 @@
-﻿using IMGBlibrary_Core.Support;
+﻿using IMGBlibrary_Core.Load;
+using IMGBlibrary_Core.Support;
 
 namespace IMGBlibrary_Core.Unpack
 {
@@ -7,32 +8,22 @@ namespace IMGBlibrary_Core.Unpack
         #region Classic type
         public static void UnpackClassic(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
         {
-            using (var gtexReader = new BinaryReader(File.Open(imgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
-            {
-                var currentDDSfile = Path.Combine(extractIMGBdir, gtex.ImageName + ".dds");
+            var ddsData = IMGBLoadTypes.LoadClassic(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
-                using (var ddsWriter = new BinaryWriter(File.Open(currentDDSfile, FileMode.Append, FileAccess.Write)))
-                {
-                    ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + ".dds");
+            File.WriteAllBytes(ddsFile, ddsData);
 
-                    gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-
-                    for (int i = 0; i < gtex.MipCount; i++)
-                    {
-                        var mipStart = gtexReader.ReadBytesUInt32(true);
-                        var mipSize = gtexReader.ReadBytesUInt32(true);
-
-                        CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
-                    }
-                }
-
-                SharedMethods.DisplayLogMessage("Unpacked " + currentDDSfile, true);
-            }
+            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
         }
 
         public static void UnpackClassicX360(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
         {
+            var ddsData = IMGBLoadTypes.LoadClassicX360(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
+            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + ".dds");
+            File.WriteAllBytes(ddsFile, ddsData);
+
+            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
         }
         #endregion
 
@@ -40,32 +31,22 @@ namespace IMGBlibrary_Core.Unpack
         #region Cubemap type
         public static void UnpackCubemap(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
         {
-            using (var gtexReader = new BinaryReader(File.Open(imgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
-            {
-                var currentDDSfile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
+            var ddsData = IMGBLoadTypes.LoadCubemap(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
-                using (var ddsWriter = new BinaryWriter(File.Open(currentDDSfile, FileMode.Append, FileAccess.Write)))
-                {
-                    ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
+            File.WriteAllBytes(ddsFile, ddsData);
 
-                    gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-
-                    for (int i = 0; i < gtex.MipCount * 6; i++)
-                    {
-                        var mipStart = gtexReader.ReadBytesUInt32(true);
-                        var mipSize = gtexReader.ReadBytesUInt32(true);
-
-                        CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
-                    }
-                }
-
-                SharedMethods.DisplayLogMessage("Unpacked " + currentDDSfile, true);
-            }
+            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
         }
 
         public static void UnpackCubemapX360(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
         {
+            var ddsData = IMGBLoadTypes.LoadCubemapX360(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
+            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
+            File.WriteAllBytes(ddsFile, ddsData);
+
+            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
         }
         #endregion
 
@@ -78,56 +59,12 @@ namespace IMGBlibrary_Core.Unpack
                 SharedMethods.DisplayLogMessage("Detected more than one mip. mip 0 alone would be unpacked", true);
             }
 
-            using (var gtexReader = new BinaryReader(File.Open(imgHeaderBlockFile, FileMode.Open, FileAccess.Read)))
-            {
-                var currentDDSfile = Path.Combine(extractIMGBdir, gtex.ImageName + "_volume.dds");
+            var ddsData = IMGBLoadTypes.LoadVolumemap(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
-                using (var ddsWriter = new BinaryWriter(File.Open(currentDDSfile, FileMode.Append, FileAccess.Write)))
-                {
-                    ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_volume.dds");
+            File.WriteAllBytes(ddsFile, ddsData);
 
-                    gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-                    var mipStart = gtexReader.ReadBytesUInt32(true);
-                    var mipSize = gtexReader.ReadBytesUInt32(true);
-
-                    CopyMipToDDS(gtex, mipStart, mipSize, imgbStream, ddsWriter);
-                }
-
-                SharedMethods.DisplayLogMessage("Unpacked " + currentDDSfile, true);
-            }
-        }
-        #endregion
-
-
-        #region Shared
-        private static void CopyMipToDDS(GTEX gtex, uint mipStart, uint mipSize, FileStream imgbStream, BinaryWriter ddsWriter)
-        {
-            var doneCopying = false;
-
-            if (gtex.Platform == IMGBFlags.Platforms.ps3)
-            {
-                imgbStream.Position = mipStart;
-                PS3Helpers.ProcessPS3ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
-            }
-
-            if (gtex.Platform == IMGBFlags.Platforms.x360)
-            {
-                imgbStream.Position = mipStart;
-                X360Helpers.ProcessX360ImageData(ref doneCopying, gtex, mipSize, imgbStream, ddsWriter);
-            }
-
-            // If the condition matches a win32 image file or
-            // a pixel format or image type that does not
-            // need anything specific done, then copy the data
-            // directly to the final dds file.
-            if (!doneCopying)
-            {
-                var currentMip = new byte[(int)mipSize];
-
-                imgbStream.Seek(mipStart, SeekOrigin.Begin);
-                _ = imgbStream.Read(currentMip, 0, (int)mipSize);
-                ddsWriter.Write(currentMip);
-            }
+            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
         }
         #endregion
     }

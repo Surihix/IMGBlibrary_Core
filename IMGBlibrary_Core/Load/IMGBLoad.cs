@@ -63,11 +63,11 @@ namespace IMGBlibrary_Core.Load
                     case ImageTypes.classic_swizzled:
                         if (gtex.Platform == Platforms.x360)
                         {
-                            ddsData = IMGBLoadTypes.LoadClassicX360(imgHeaderBlockData, gtex, imgbStream);
+                            ddsData = IMGBLoadTypes.LoadClassicX360(imgHeaderBlockData, gtex, imgbStream, true);
                         }
                         else
                         {
-                            ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream);
+                            ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream, true);
                         }
                         break;
 
@@ -75,16 +75,16 @@ namespace IMGBlibrary_Core.Load
                     case ImageTypes.cubemap_swizzled:
                         if (gtex.Platform == Platforms.x360)
                         {
-                            ddsData = IMGBLoadTypes.LoadCubemapX360(imgHeaderBlockData, gtex, imgbStream);
+                            ddsData = IMGBLoadTypes.LoadCubemapX360(imgHeaderBlockData, gtex, imgbStream, true);
                         }
                         else
                         {
-                            ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream);
+                            ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream, true);
                         }
                         break;
 
                     case ImageTypes.volumemap:
-                        ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockData, gtex, imgbStream);
+                        ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockData, gtex, imgbStream, true);
                         break;
                 }
             }

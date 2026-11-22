@@ -7,11 +7,8 @@ namespace IMGBlibrary_Core.Support
         public static int MipWidth = 0;
         public static int MipHeight = 0;
 
-        public static byte[] ProcessPS3ImageData(ref bool doneCopying, GTEX gtex, uint mipSize, FileStream imgbStream, BinaryWriter ddsWriter)
+        public static byte[] ProcessPS3ImageData(ref bool doneCopying, GTEX gtex, byte[] rawMipData, BinaryWriter ddsWriter)
         {
-            var rawMipData = new byte[mipSize];
-            _ = imgbStream.Read(rawMipData, 0, (int)mipSize);
-
             var hasProcessed = false;
             var isSwizzled = false;
 
