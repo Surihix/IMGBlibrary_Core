@@ -73,13 +73,7 @@ namespace IMGBlibrary_Core.Support
 
             if (hasPadding)
             {
-                using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
-                {
-                    using (var adjustedMipStream = new MemoryStream())
-                    {
-
-                    }
-                }
+                adjustedMipData = RemovePadding(gtex, mipData);
             }
             else
             {
@@ -88,6 +82,110 @@ namespace IMGBlibrary_Core.Support
             }
 
             return adjustedMipData;
+        }
+
+        private static byte[] RemovePadding(GTEX gtex, byte[] mipData)
+        {
+            var nonPaddedMipData = Array.Empty<byte>();
+
+            // remove later
+            if (MipHeight < 128 && MipWidth < 128)
+            {
+                return nonPaddedMipData;
+            }
+
+            // remove later
+            if (gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2)
+            {
+                return nonPaddedMipData;
+            }
+
+            var bpp = 0;
+            var blockReadSize = 0;
+
+            switch (gtex.ImgFormat)
+            {
+                case ImageFormats.r8g8b8a8:
+                case ImageFormats.r8g8b8a8_2:
+                    bpp = 4;
+                    blockReadSize = 4;
+                    break;
+
+                case ImageFormats.dxt1:
+                    bpp = 2;
+                    blockReadSize = 8;
+                    break;
+
+                case ImageFormats.dxt3:
+                case ImageFormats.dxt5:
+                    bpp = 4;
+                    blockReadSize = 16;
+                    break;
+            }
+
+            var paddedY = MipHeight % 128;
+            var paddedX = MipWidth % 128;
+
+            var isPaddedY = paddedY != 0;
+            var isPaddedX = paddedX != 0;
+
+            int paddedWidth = 0;
+            if (isPaddedX)
+            {
+                paddedWidth = (128 - paddedX);
+            }
+
+            var padType1 = isPaddedX && MipHeight > 128;
+
+            if (padType1)
+            {
+                using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
+                {
+                    using (var nonPaddedDataStream = new MemoryStream())
+                    {
+                        for (int y = 0; y < MipHeight; y += bpp)
+                        {
+                            for (int x = 0; x < MipWidth; x += bpp)
+                            {
+                                var dataToWrite = mipDataReader.ReadBytes(blockReadSize);
+
+                                var partialBlock = y + bpp > MipHeight || x + bpp > MipWidth;
+
+                                nonPaddedDataStream.Write(dataToWrite, 0, blockReadSize);
+
+                                for (int i = 0; i < bpp; i++)
+                                {
+                                    if (partialBlock && y + i >= MipHeight)
+                                    {
+                                        break;
+                                    }
+
+                                    for (int j = 0; j < bpp; j++)
+                                    {
+                                        if (partialBlock && x + j >= MipWidth)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (isPaddedX)
+                            {
+                                for (int x = 0; x < paddedWidth; x += bpp)
+                                {
+                                    _ = mipDataReader.ReadBytes(blockReadSize);
+                                }
+                            }
+                        }
+
+                        nonPaddedDataStream.Seek(0, SeekOrigin.Begin);
+                        nonPaddedMipData = nonPaddedDataStream.ToArray();
+                    }
+                }
+            }
+
+            return nonPaddedMipData;
         }
 
         private static byte[] XEndian16(byte[] unswizzledBufferVar)
