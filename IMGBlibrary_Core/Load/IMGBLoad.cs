@@ -61,25 +61,19 @@ namespace IMGBlibrary_Core.Load
                 {
                     case ImageTypes.classic:
                     case ImageTypes.classic_swizzled:
-                        if (gtex.Platform == Platforms.x360)
-                        {
-                            ddsData = IMGBLoadTypes.LoadClassicX360(imgHeaderBlockData, gtex, imgbStream, true);
-                        }
-                        else
-                        {
-                            ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream, true);
-                        }
+                        ddsData = IMGBLoadTypes.LoadClassic(imgHeaderBlockData, gtex, imgbStream, true);
                         break;
 
                     case ImageTypes.cubemap:
                     case ImageTypes.cubemap_swizzled:
+                        if (gtex.Platform == Platforms.win32 || gtex.Platform == Platforms.ps3)
+                        {
+                            ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream, true);
+                        }
+
                         if (gtex.Platform == Platforms.x360)
                         {
                             ddsData = IMGBLoadTypes.LoadCubemapX360(imgHeaderBlockData, gtex, imgbStream, true);
-                        }
-                        else
-                        {
-                            ddsData = IMGBLoadTypes.LoadCubemap(imgHeaderBlockData, gtex, imgbStream, true);
                         }
                         break;
 

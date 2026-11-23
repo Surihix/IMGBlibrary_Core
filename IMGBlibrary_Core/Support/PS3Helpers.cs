@@ -7,14 +7,14 @@ namespace IMGBlibrary_Core.Support
         public static int MipWidth = 0;
         public static int MipHeight = 0;
 
-        public static byte[] ProcessPS3ImageData(ref bool doneCopying, GTEX gtex, byte[] rawMipData, BinaryWriter ddsWriter)
+        public static byte[] ProcessPS3ImageData(GTEX gtex, byte[] rawMipData)
         {
             var hasProcessed = false;
             var isSwizzled = false;
 
             if (gtex.ImgType == ImageTypes.classic_swizzled)
             {
-                if (gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2)
+                if (gtex.ImgFormat == ImageFormats.r8g8b8a8_type3 || gtex.ImgFormat == ImageFormats.r8g8b8a8)
                 {
                     isSwizzled = true;
                 }
@@ -26,7 +26,7 @@ namespace IMGBlibrary_Core.Support
                 hasProcessed = true;
             }
 
-            var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2;
+            var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8_type3 || gtex.ImgFormat == ImageFormats.r8g8b8a8;
 
             if (colorAdjust)
             {
@@ -36,9 +36,6 @@ namespace IMGBlibrary_Core.Support
 
             if (hasProcessed)
             {
-                ddsWriter.Write(rawMipData);
-                doneCopying = true;
-
                 if (gtex.MipCount > 1)
                 {
                     SetNextMipHeightWidth(gtex);
@@ -48,46 +45,42 @@ namespace IMGBlibrary_Core.Support
             return rawMipData;
         }
 
+        // Swizzle algorithm adapted from Xentax
         private static byte[] MortonUnswizzle(byte[] mipData)
         {
-            int width = MipWidth;
-            int height = MipHeight;
-
-            var unswizzledData = new byte[width * height * 4];
+            var unswizzledData = new byte[MipWidth * MipHeight * 4];
             var processBuffer = new byte[4];
 
             var readPos = 0;
-            for (int i = 0; i < width * height; i++)
+            for (int i = 0; i < MipWidth * MipHeight; i++)
             {
                 Array.Copy(mipData, readPos, processBuffer, 0, 4);
 
-                int val1 = 0;
-                int val2 = 0;
-                int val3;
-                int val4 = (val3 = 1);
-                int val5 = i;
-                int val6 = width;
-                int val7 = height;
+                int x = 0, y = 0;
+                int xw = 1, yw = 1;
+                int tnumt = i;
+                int xbit = MipWidth;
+                int ybit = MipHeight;
 
-                while (val6 > 1 || val7 > 1)
+                while (xbit > 1 || ybit > 1)
                 {
-                    if (val6 > 1)
+                    if (xbit > 1)
                     {
-                        val1 += val4 * (val5 & 1);
-                        val5 >>= 1;
-                        val4 *= 2;
-                        val6 >>= 1;
+                        x += xw * (tnumt & 1);
+                        tnumt >>= 1;
+                        xw *= 2;
+                        xbit >>= 1;
                     }
-                    if (val7 > 1)
+                    if (ybit > 1)
                     {
-                        val2 += val3 * (val5 & 1);
-                        val5 >>= 1;
-                        val3 *= 2;
-                        val7 >>= 1;
+                        y += yw * (tnumt & 1);
+                        tnumt >>= 1;
+                        yw *= 2;
+                        ybit >>= 1;
                     }
                 }
 
-                var processedPixel = val2 * width + val1;
+                var processedPixel = y * MipWidth + x;
                 int pixelOffset = processedPixel * 4;
 
                 Array.Copy(processBuffer, 0, unswizzledData, pixelOffset, 4);
@@ -146,42 +139,47 @@ namespace IMGBlibrary_Core.Support
 
         private static void SetNextMipHeightWidth(GTEX gtex)
         {
-            if (gtex.ImgFormat == ImageFormats.dxt1 || gtex.ImgFormat == ImageFormats.dxt3 || gtex.ImgFormat == ImageFormats.dxt5)
+            switch (gtex.ImgFormat)
             {
-                MipHeight /= 2;
-
-                if (MipHeight < 4)
-                {
-                    MipHeight = 4;
-                }
-
-                MipWidth /= 2;
-
-                if (MipWidth < 4)
-                {
-                    MipWidth = 4;
-                }
-            }
-
-            if (gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2)
-            {
-                if (MipHeight == 1)
-                {
-                    MipHeight = 1;
-                }
-                else
-                {
+                case ImageFormats.dxt1:
+                case ImageFormats.dxt3:
+                case ImageFormats.dxt5:
                     MipHeight /= 2;
-                }
 
-                if (MipWidth == 1)
-                {
-                    MipWidth = 1;
-                }
-                else
-                {
+                    if (MipHeight < 4)
+                    {
+                        MipHeight = 4;
+                    }
+
                     MipWidth /= 2;
-                }
+
+                    if (MipWidth < 4)
+                    {
+                        MipWidth = 4;
+                    }
+                    break;
+
+                case ImageFormats.r8g8b8a8:
+                case ImageFormats.r8g8b8a8_type3:
+                case ImageFormats.r8:
+                    if (MipHeight == 1)
+                    {
+                        MipHeight = 1;
+                    }
+                    else
+                    {
+                        MipHeight /= 2;
+                    }
+
+                    if (MipWidth == 1)
+                    {
+                        MipWidth = 1;
+                    }
+                    else
+                    {
+                        MipWidth /= 2;
+                    }
+                    break;
             }
         }
     }

@@ -7,7 +7,7 @@ namespace IMGBlibrary_Core.Support
         public static int MipWidth = 0;
         public static int MipHeight = 0;
 
-        public static void ProcessX360ImageData(ref bool doneCopying, GTEX gtex, byte[] rawMipData, BinaryWriter ddsWriter)
+        public static byte[] ProcessX360ImageData(GTEX gtex, byte[] rawMipData)
         {
             var adjustedMipData = AdjustMipData(gtex, rawMipData);
 
@@ -19,10 +19,10 @@ namespace IMGBlibrary_Core.Support
                     SetNextMipHeightWidth(gtex);
                 }
 
-                return;
+                return adjustedMipData;
             }
 
-            var isSwizzled = gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled;
+            var isSwizzled = (gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled) && gtex.ImgFormat != ImageFormats.r8;
 
             if (isSwizzled)
             {
@@ -31,20 +31,25 @@ namespace IMGBlibrary_Core.Support
 
             adjustedMipData = XEndian16(adjustedMipData);
 
-            var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2;
+            var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8_type3 || gtex.ImgFormat == ImageFormats.r8g8b8a8;
 
             if (colorAdjust)
             {
                 adjustedMipData = AdjustColor(adjustedMipData);
             }
 
-            ddsWriter.Write(adjustedMipData);
-            doneCopying = true;
-
             if (gtex.MipCount > 1)
             {
                 SetNextMipHeightWidth(gtex);
             }
+
+            return adjustedMipData;
+        }
+
+        // fix later
+        public static byte[] ProcessX360CubemapImageData(BinaryReader gtexReader, GTEX gtex, byte[] cubemapBaseBlock)
+        {
+            return Array.Empty<byte>();
         }
 
         private static byte[] AdjustMipData(GTEX gtex, byte[] mipData)
@@ -75,7 +80,7 @@ namespace IMGBlibrary_Core.Support
 
             if (hasPadding)
             {
-                adjustedMipData = RemovePadding(gtex, mipData);
+                adjustedMipData = X360PaddingHelpers.RemovePadding(gtex, mipData);
             }
             else
             {
@@ -86,137 +91,7 @@ namespace IMGBlibrary_Core.Support
             return adjustedMipData;
         }
 
-        private static byte[] RemovePadding(GTEX gtex, byte[] mipData)
-        {
-            var nonPaddedMipData = Array.Empty<byte>();
-
-            // remove later
-            if (MipHeight < 128 && MipWidth < 128)
-            {
-                return nonPaddedMipData;
-            }
-
-            var bpp = 0;
-            var blockReadSize = 0;
-
-            var paddedY = MipHeight % 128;
-            var paddedX = MipWidth % 128;
-
-            var isPaddedY = paddedY != 0;
-            var isPaddedX = paddedX != 0;
-
-            int paddedWidth = 0;
-            if (isPaddedX)
-            {
-                paddedWidth = (128 - paddedX);
-            }
-
-            var padType1 = isPaddedX && isPaddedY && MipWidth > 128 && MipHeight < 128;
-            var padType2 = isPaddedX && isPaddedY && MipHeight > 128 && MipWidth > 128;
-
-            switch (gtex.ImgFormat)
-            {
-                case ImageFormats.r8g8b8a8:
-                case ImageFormats.r8g8b8a8_2:
-                    bpp = 4;
-                    if (padType1)
-                    {
-                        using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
-                        {
-                            using (var nonPaddedDataStream = new MemoryStream())
-                            {
-                                for (int y = 0; y < MipHeight; y++)
-                                {
-                                    for (int x = 0; x < MipWidth; x++)
-                                    {
-                                        var dataToWrite = mipDataReader.ReadBytes(bpp);
-                                        nonPaddedDataStream.Write(dataToWrite, 0, bpp);
-                                    }
-
-                                    if (isPaddedX)
-                                    {
-                                        for (int x = 0; x < paddedWidth; x++)
-                                        {
-                                            _ = mipDataReader.ReadBytes(bpp);
-                                        }
-                                    }
-                                }
-
-                                nonPaddedDataStream.Seek(0, SeekOrigin.Begin);
-                                nonPaddedMipData = nonPaddedDataStream.ToArray();
-                            }
-                        }
-                    }
-
-                    break;
-
-                case ImageFormats.dxt1:
-                    bpp = 2;
-                    blockReadSize = 8;
-                    break;
-
-                case ImageFormats.dxt3:
-                case ImageFormats.dxt5:
-                    bpp = 4;
-                    blockReadSize = 16;
-                    break;
-            }
-
-
-            if (gtex.ImgFormat == ImageFormats.dxt1 || gtex.ImgFormat == ImageFormats.dxt3 || gtex.ImgFormat == ImageFormats.dxt5)
-            {
-                if (padType2)
-                {
-                    using (var mipDataReader = new BinaryReader(new MemoryStream(mipData)))
-                    {
-                        using (var nonPaddedDataStream = new MemoryStream())
-                        {
-                            for (int y = 0; y < MipHeight; y += bpp)
-                            {
-                                for (int x = 0; x < MipWidth; x += bpp)
-                                {
-                                    var dataToWrite = mipDataReader.ReadBytes(blockReadSize);
-
-                                    var partialBlock = y + bpp > MipHeight || x + bpp > MipWidth;
-
-                                    nonPaddedDataStream.Write(dataToWrite, 0, blockReadSize);
-
-                                    for (int i = 0; i < bpp; i++)
-                                    {
-                                        if (partialBlock && y + i >= MipHeight)
-                                        {
-                                            break;
-                                        }
-
-                                        for (int j = 0; j < bpp; j++)
-                                        {
-                                            if (partialBlock && x + j >= MipWidth)
-                                            {
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (isPaddedX)
-                                {
-                                    for (int x = 0; x < paddedWidth; x += bpp)
-                                    {
-                                        _ = mipDataReader.ReadBytes(blockReadSize);
-                                    }
-                                }
-                            }
-
-                            nonPaddedDataStream.Seek(0, SeekOrigin.Begin);
-                            nonPaddedMipData = nonPaddedDataStream.ToArray();
-                        }
-                    }
-                }
-            }
-
-            return nonPaddedMipData;
-        }
-
+        // Swizzle algorithm adapted from NCDyson/RareView Texture.cs
         private static byte[] XEndian16(byte[] unswizzledBufferVar)
         {
             byte[] endianSwappedBufferVar = new byte[unswizzledBufferVar.Length];
@@ -282,8 +157,8 @@ namespace IMGBlibrary_Core.Support
                     blockSize = 4;
                     texelPitch = 16;
                     break;
+                case ImageFormats.r8g8b8a8_type3:
                 case ImageFormats.r8g8b8a8:
-                case ImageFormats.r8g8b8a8_2:
                     blockSize = 1;
                     texelPitch = 4;
                     break;
@@ -360,101 +235,47 @@ namespace IMGBlibrary_Core.Support
 
         private static void SetNextMipHeightWidth(GTEX gtex)
         {
-            if (gtex.ImgFormat == ImageFormats.dxt1 || gtex.ImgFormat == ImageFormats.dxt3 || gtex.ImgFormat == ImageFormats.dxt5)
+            switch (gtex.ImgFormat)
             {
-                MipHeight /= 2;
+                case ImageFormats.r8g8b8a8:
+                case ImageFormats.r8g8b8a8_type3:
+                    if (MipHeight == 1)
+                    {
+                        MipHeight = 1;
+                    }
+                    else
+                    {
+                        MipHeight /= 2;
+                    }
 
-                if (MipHeight < 4)
-                {
-                    MipHeight = 4;
-                }
-
-                MipWidth /= 2;
-
-                if (MipWidth < 4)
-                {
-                    MipWidth = 4;
-                }
-            }
-
-            if (gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2)
-            {
-                if (MipHeight == 1)
-                {
-                    MipHeight = 1;
-                }
-                else
-                {
-                    MipHeight /= 2;
-                }
-
-                if (MipWidth == 1)
-                {
-                    MipWidth = 1;
-                }
-                else
-                {
-                    MipWidth /= 2;
-                }
-            }
-        }
-
-        public static byte ComputeMipCount(GTEX gtex)
-        {
-            var mipCounter = byte.MinValue;
-
-            int mWidth = gtex.Width;
-            int mHeight = gtex.Height;
-
-            while (true)
-            {
-                if (mHeight == 1 && mWidth == 1)
-                {
+                    if (MipWidth == 1)
+                    {
+                        MipWidth = 1;
+                    }
+                    else
+                    {
+                        MipWidth /= 2;
+                    }
                     break;
-                }
 
-                if (gtex.ImgFormat == ImageFormats.dxt1 || gtex.ImgFormat == ImageFormats.dxt3 || gtex.ImgFormat == ImageFormats.dxt5)
-                {
-                    mHeight /= 2;
-                    if (mHeight < 1)
+                case ImageFormats.dxt1:
+                case ImageFormats.dxt3:
+                case ImageFormats.dxt5:
+                    MipHeight /= 2;
+
+                    if (MipHeight < 4)
                     {
-                        mHeight = 1;
+                        MipHeight = 4;
                     }
 
-                    mWidth /= 2;
-                    if (mWidth < 1)
-                    {
-                        mWidth = 1;
-                    }
+                    MipWidth /= 2;
 
-                    mipCounter++;
-                }
-
-                if (gtex.ImgFormat == ImageFormats.r8g8b8a8 || gtex.ImgFormat == ImageFormats.r8g8b8a8_2)
-                {
-                    if (mHeight == 1)
+                    if (MipWidth < 4)
                     {
-                        mHeight = 1;
+                        MipWidth = 4;
                     }
-                    else
-                    {
-                        mHeight /= 2;
-                    }
-
-                    if (mWidth == 1)
-                    {
-                        mWidth = 1;
-                    }
-                    else
-                    {
-                        mWidth /= 2;
-                    }
-
-                    mipCounter++;
-                }
+                    break;
             }
-
-            return mipCounter;
         }
     }
 }

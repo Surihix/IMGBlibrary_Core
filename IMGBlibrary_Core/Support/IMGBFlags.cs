@@ -53,14 +53,19 @@
         public enum ImageFormats
         {
             /// <summary>
-            /// Uncompressed DDS (can have mipmaps)
+            /// Uncompressed DDS (R8G8B8A8 Type3)
             /// </summary>
-            r8g8b8a8 = 3,
+            r8g8b8a8_type3 = 3,
 
             /// <summary>
-            /// Uncompressed DDS (cannot have mipmaps)
+            /// Uncompressed DDS (R8G8B8A8)
             /// </summary>
-            r8g8b8a8_2 = 4,
+            r8g8b8a8 = 4,
+
+            /// <summary>
+            /// Uncompressed DDS (R8_UNORM)
+            /// </summary>
+            r8 = 5,
 
             /// <summary>
             /// BC1 compression

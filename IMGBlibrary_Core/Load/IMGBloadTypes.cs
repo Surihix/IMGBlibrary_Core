@@ -1,5 +1,6 @@
 ﻿using IMGBlibrary_Core.Support;
 using IMGBlibrary_Core.Unpack;
+using static IMGBlibrary_Core.Support.IMGBFlags;
 
 namespace IMGBlibrary_Core.Load
 {
@@ -24,42 +25,9 @@ namespace IMGBlibrary_Core.Load
                         {
                             var mipStart = gtexReader.ReadBytesUInt32(true);
                             var mipSize = gtexReader.ReadBytesUInt32(true);
-                            var mipData = LoadMipData((int)mipSize, imgbStream, mipStart);
+                            var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
 
-                            CopyMipToDDS(gtex, mipData, ddsWriter);
-                        }
-
-                        ddsStream.Position = 0;
-                        loadedData = ddsStream.ToArray();
-                    }
-                }
-            }
-
-            SharedMethods.DisplayLogMessage($"Loaded {gtex.ImageName}.dds", showLoadLog);
-            return loadedData;
-        }
-
-        public static byte[] LoadClassicX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream, bool showLoadLog)
-        {
-            var loadedData = Array.Empty<byte>();
-
-            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
-            {
-                using (var ddsStream = new MemoryStream())
-                {
-                    using (var ddsWriter = new BinaryWriter(ddsStream))
-                    {
-                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
-
-                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-
-                        for (int i = 0; i < gtex.MipCount; i++)
-                        {
-                            var mipStart = gtexReader.ReadBytesUInt32(true);
-                            var mipSize = gtexReader.ReadBytesUInt32(true);
-                            var mipData = LoadMipData((int)mipSize, imgbStream, mipStart);
-
-                            CopyMipToDDS(gtex, mipData, ddsWriter);
+                            ddsWriter.Write(mipData);
                         }
 
                         ddsStream.Position = 0;
@@ -93,10 +61,9 @@ namespace IMGBlibrary_Core.Load
                         {
                             var mipStart = gtexReader.ReadBytesUInt32(true);
                             var mipSize = gtexReader.ReadBytesUInt32(true);
+                            var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
 
-                            var mipData = LoadMipData((int)mipSize, imgbStream, mipStart);
-
-                            CopyMipToDDS(gtex, mipData, ddsWriter);
+                            ddsWriter.Write(mipData);
                         }
 
                         ddsStream.Position = 0;
@@ -122,19 +89,14 @@ namespace IMGBlibrary_Core.Load
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
                         var mipStart = gtexReader.ReadBytesUInt32(true);
                         var mipSize = gtexReader.ReadBytesUInt32(true);
-                        var mipData = LoadMipData((int)mipSize, imgbStream, mipStart);
 
-                        var hasMips = gtexReader.ReadUInt64() != 0;
-                        _ = gtexReader.BaseStream.Position -= 8;
+                        var cubemapBaseBlock = new byte[mipSize];
+                        _ = imgbStream.Position = mipStart;
+                        _ = imgbStream.Read(cubemapBaseBlock, 0, (int)mipSize);
 
-                        if (hasMips)
-                        {
-                            var mipCounter = X360Helpers.ComputeMipCount(gtex);
-                            gtex.MipCount = mipCounter;
-                        }
-
+                        // fix later
                         ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
-                        ddsWriter.Write(mipData);
+                        ddsWriter.Write(cubemapBaseBlock);
 
                         ddsStream.Position = 0;
                         loadedData = ddsStream.ToArray();
@@ -164,9 +126,9 @@ namespace IMGBlibrary_Core.Load
                         gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
                         var mipStart = gtexReader.ReadBytesUInt32(true);
                         var mipSize = gtexReader.ReadBytesUInt32(true);
-                        var mipData = LoadMipData((int)mipSize, imgbStream, mipStart);
+                        var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
 
-                        CopyMipToDDS(gtex, mipData, ddsWriter);
+                        ddsWriter.Write(mipData);
 
                         ddsStream.Position = 0;
                         loadedData = ddsStream.ToArray();
@@ -181,38 +143,28 @@ namespace IMGBlibrary_Core.Load
 
 
         #region Shared
-        private static byte[] LoadMipData(int mipSize, FileStream imgbStream, uint mipStart)
+        private static byte[] GetMipData(int mipSize, FileStream imgbStream, uint mipStart, GTEX gtex)
         {
-            var mipData = new byte[mipSize];
+            var rawMipData = new byte[mipSize];
 
             _ = imgbStream.Position = mipStart;
-            _ = imgbStream.Read(mipData, 0, mipSize);
+            _ = imgbStream.Read(rawMipData, 0, mipSize);
 
-            return mipData;
-        }
-
-        private static void CopyMipToDDS(GTEX gtex, byte[] mipData, BinaryWriter ddsWriter)
-        {
-            var doneCopying = false;
-
-            if (gtex.Platform == IMGBFlags.Platforms.ps3)
+            if (gtex.Platform == Platforms.ps3)
             {
-                PS3Helpers.ProcessPS3ImageData(ref doneCopying, gtex, mipData, ddsWriter);
+                rawMipData = PS3Helpers.ProcessPS3ImageData(gtex, rawMipData);
             }
 
-            if (gtex.Platform == IMGBFlags.Platforms.x360)
+            if (gtex.Platform == Platforms.x360)
             {
-                X360Helpers.ProcessX360ImageData(ref doneCopying, gtex, mipData, ddsWriter);
+                // hack remove this later
+                if (gtex.ImgFormat != ImageFormats.r8)
+                {
+                    rawMipData = X360Helpers.ProcessX360ImageData(gtex, rawMipData);
+                }
             }
 
-            // If Platform matches win32 or a image format
-            // that doesn't need anything specific
-            // to be done, then copy the data directly
-            // to the final dds file.
-            if (!doneCopying)
-            {
-                ddsWriter.Write(mipData);
-            }
+            return rawMipData;
         }
         #endregion
     }

@@ -80,8 +80,8 @@ namespace IMGBlibrary_Core.Support
         }
 
         private static readonly byte[] GTEXPlatformVales = new byte[] { 1, 2, 3 };
-        private static readonly byte[] GTEXFormatValues = new byte[] { 3, 4, 24, 25, 26 };
-        private static readonly byte[] GTEXTypeValues = new byte[] { 0, 4, 1, 5, 2 };
+        private static readonly byte[] GTEXFormatValues = new byte[] { 3, 4, 5, 24, 25, 26 };
+        private static readonly byte[] GTEXTypeValues = new byte[] { 0, 1, 2, 4, 5 };
         public static bool CheckGTEXFlags(GTEX gtex)
         {
             if (GTEXPlatformVales.Contains(gtex.PlatformFlag) && GTEXFormatValues.Contains(gtex.ImgFormatFlag) && GTEXTypeValues.Contains(gtex.ImgTypeFlag))

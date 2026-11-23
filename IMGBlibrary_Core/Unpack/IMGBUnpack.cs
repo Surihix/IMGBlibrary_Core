@@ -59,26 +59,12 @@ namespace IMGBlibrary_Core.Unpack
                 {
                     case ImageTypes.classic:
                     case ImageTypes.classic_swizzled:
-                        if (gtex.Platform == Platforms.x360)
-                        {
-                            IMGBUnpackTypes.UnpackClassicX360(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        }
-                        else
-                        {
-                            IMGBUnpackTypes.UnpackClassic(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        }
+                        IMGBUnpackTypes.UnpackClassic(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
                         break;
 
                     case ImageTypes.cubemap:
                     case ImageTypes.cubemap_swizzled:
-                        if (gtex.Platform == Platforms.x360)
-                        {
-                            IMGBUnpackTypes.UnpackCubemapX360(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        }
-                        else
-                        {
-                            IMGBUnpackTypes.UnpackCubemap(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        }
+                        IMGBUnpackTypes.UnpackCubemap(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
                         break;
 
                     case ImageTypes.volumemap:

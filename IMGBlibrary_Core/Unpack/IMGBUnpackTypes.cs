@@ -15,38 +15,31 @@ namespace IMGBlibrary_Core.Unpack
 
             SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
         }
-
-        public static void UnpackClassicX360(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
-        {
-            var ddsData = IMGBLoadTypes.LoadClassicX360(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
-
-            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + ".dds");
-            File.WriteAllBytes(ddsFile, ddsData);
-
-            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
-        }
         #endregion
 
 
         #region Cubemap type
         public static void UnpackCubemap(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
         {
-            var ddsData = IMGBLoadTypes.LoadCubemap(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
+            if (gtex.Platform == IMGBFlags.Platforms.win32 || gtex.Platform == IMGBFlags.Platforms.ps3)
+            {
+                var ddsData = IMGBLoadTypes.LoadCubemap(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
-            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
-            File.WriteAllBytes(ddsFile, ddsData);
+                var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
+                File.WriteAllBytes(ddsFile, ddsData);
 
-            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
-        }
+                SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
+            }
 
-        public static void UnpackCubemapX360(string imgHeaderBlockFile, string extractIMGBdir, GTEX gtex, FileStream imgbStream)
-        {
-            var ddsData = IMGBLoadTypes.LoadCubemapX360(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
+            if (gtex.Platform == IMGBFlags.Platforms.x360)
+            {
+                var ddsData = IMGBLoadTypes.LoadCubemapX360(File.ReadAllBytes(imgHeaderBlockFile), gtex, imgbStream, false);
 
-            var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
-            File.WriteAllBytes(ddsFile, ddsData);
+                var ddsFile = Path.Combine(extractIMGBdir, gtex.ImageName + "_cbmap.dds");
+                File.WriteAllBytes(ddsFile, ddsData);
 
-            SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
+                SharedMethods.DisplayLogMessage("Unpacked " + ddsFile, true);
+            }
         }
         #endregion
 

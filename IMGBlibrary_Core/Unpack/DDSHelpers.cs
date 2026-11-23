@@ -60,7 +60,7 @@ namespace IMGBlibrary_Core.Unpack
             uint ddsCapsVal1 = 0x1;  // DDSD_CAPS
             uint ddsCapsVal2 = 0x2;  // DDSD_HEIGHT
             uint ddsCapsVal3 = 0x4;  // DDSD_WIDTH
-            uint ddsCapsVal4 = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x8 : 0);  // DDSD_PITCH
+            uint ddsCapsVal4 = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 || gtex.ImgFormatFlag == 5 ? 0x8 : 0);  // DDSD_PITCH
             uint ddsCapsVal5 = 0x1000;  // DDSD_PIXELFORMAT
             uint ddsCapsVal6 = (uint)(gtex.MipCount > 1 ? 0x20000 : 0); // DDSD_MIPMAPCOUNT
             uint ddsCapsVal7 = (uint)(gtex.ImgFormatFlag == 24 || gtex.ImgFormatFlag == 25 || gtex.ImgFormatFlag == 26 ? 0x80000 : 0);    // DDSD_LINEARSIZE
@@ -76,8 +76,9 @@ namespace IMGBlibrary_Core.Unpack
 
             switch (gtex.ImgFormatFlag)
             {
-                case 3:     // R8G8B8A8 (with mips)
+                case 3:     // R8G8B8A8_Type3
                 case 4:     // R8G8B8A8
+                case 5:     // R8G8B8A8_Type5
                     wPitchOrLinearSizeVal = ((uint)gtex.Width * 32 + 7) / 8;
                     break;
 
@@ -104,12 +105,44 @@ namespace IMGBlibrary_Core.Unpack
             var dwSize = BitConverter.GetBytes((uint)32);    // DDS_PIXELFORMAT -> dwSize
             Array.ConstrainedCopy(dwSize, 0, ddspf, 0, 4);
 
-            uint flagsVal1 = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x1 : 0);    // DDS_PIXELFORMAT -> DDPF_ALPHAPIXELS
-            uint flagsVal2 = 0; // DDS_PIXELFORMAT -> DDPF_ALPHA
-            uint flagsVal3 = (uint)(gtex.ImgFormatFlag == 24 || gtex.ImgFormatFlag == 25 || gtex.ImgFormatFlag == 26 ? 0x4 : 0); // DDS_PIXELFORMAT -> DDPF_FOURCC
-            uint flagsVal4 = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x40 : 0);   // DDS_PIXELFORMAT -> DDPF_RGB
-            uint flagsVal5 = 0; // DDS_PIXELFORMAT -> DDPF_YUV
-            uint flagsVal6 = 0; // DDS_PIXELFORMAT -> DDPF_LUMINANCE
+            uint flagsVal1;  // DDS_PIXELFORMAT -> DDPF_ALPHAPIXELS
+            uint flagsVal2; // DDS_PIXELFORMAT -> DDPF_ALPHA
+            uint flagsVal3; // DDS_PIXELFORMAT -> DDPF_FOURCC
+            uint flagsVal4;   // DDS_PIXELFORMAT -> DDPF_RGB
+            uint flagsVal5; // DDS_PIXELFORMAT -> DDPF_YUV
+            uint flagsVal6; // DDS_PIXELFORMAT -> DDPF_LUMINANCE
+
+            switch (gtex.ImgFormatFlag)
+            {
+                case 3:
+                case 4:
+                    flagsVal1 = 0x1;
+                    flagsVal2 = 0;
+                    flagsVal3 = 0;
+                    flagsVal4 = 0x40;
+                    flagsVal5 = 0;
+                    flagsVal6 = 0;
+                    break;
+
+                case 5:
+                    flagsVal1 = 0;
+                    flagsVal2 = 0;
+                    flagsVal3 = 0;
+                    flagsVal4 = 0;
+                    flagsVal5 = 0;
+                    flagsVal6 = 0x20000;
+                    break;
+
+                default:
+                    flagsVal1 = 0;
+                    flagsVal2 = 0;
+                    flagsVal3 = 0x4;
+                    flagsVal4 = 0;
+                    flagsVal5 = 0;
+                    flagsVal6 = 0;
+                    break;
+            }
+
             uint flagsVal = flagsVal1 + flagsVal2 + flagsVal3 + flagsVal4 + flagsVal5 + flagsVal6;
             var dwFlags = BitConverter.GetBytes(flagsVal);  // DDS_PIXELFORMAT -> dwFlags
             Array.ConstrainedCopy(dwFlags, 0, ddspf, 4, 4);
@@ -133,19 +166,44 @@ namespace IMGBlibrary_Core.Unpack
 
             Array.ConstrainedCopy(dwFourCC, 0, ddspf, 8, 4);
 
-            uint dwRGBBitCount = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x20 : 0); // DDS_PIXELFORMAT -> dwRGBBitCount
+            uint dwRGBBitCount; // DDS_PIXELFORMAT -> dwRGBBitCount
+            uint dwRBitMask; // DDS_PIXELFORMAT -> dwRBitMask
+            uint dwGBitMask; // DDS_PIXELFORMAT -> dwGBitMask
+            uint dwBBitMask; // DDS_PIXELFORMAT -> dwBBitMask
+            uint dwABitMask; // DDS_PIXELFORMAT -> dwABitMask
+
+            switch (gtex.ImgFormatFlag)
+            {
+                case 3:
+                case 4:
+                    dwRGBBitCount = 0x20;
+                    dwRBitMask = 0x00FF0000;
+                    dwGBitMask = 0x0000FF00;
+                    dwBBitMask = 0x000000FF;
+                    dwABitMask = 0xFF000000;
+                    break;
+
+                case 5:
+                    dwRGBBitCount = 0x8;
+                    dwRBitMask = 0x000000FF;
+                    dwGBitMask = 0;
+                    dwBBitMask = 0;
+                    dwABitMask = 0;
+                    break;
+
+                default:
+                    dwRGBBitCount = 0;
+                    dwRBitMask = 0;
+                    dwGBitMask = 0;
+                    dwBBitMask = 0;
+                    dwABitMask = 0;
+                    break;
+            }
+
             Array.ConstrainedCopy(BitConverter.GetBytes(dwRGBBitCount), 0, ddspf, 12, 4);
-
-            uint dwRBitMask = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x00FF0000 : 0); // DDS_PIXELFORMAT -> dwRBitMask
             Array.ConstrainedCopy(BitConverter.GetBytes(dwRBitMask), 0, ddspf, 16, 4);
-
-            uint dwGBitMask = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x0000FF00 : 0); // DDS_PIXELFORMAT -> dwGBitMask
             Array.ConstrainedCopy(BitConverter.GetBytes(dwGBitMask), 0, ddspf, 20, 4);
-
-            uint dwBBitMask = (uint)(gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0x000000FF : 0); // DDS_PIXELFORMAT -> dwBBitMask
             Array.ConstrainedCopy(BitConverter.GetBytes(dwBBitMask), 0, ddspf, 24, 4);
-
-            uint dwABitMask = (gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 ? 0xFF000000 : 0); // DDS_PIXELFORMAT -> dwABitMask
             Array.ConstrainedCopy(BitConverter.GetBytes(dwABitMask), 0, ddspf, 28, 4);
 
             return ddspf;

@@ -17,7 +17,7 @@ namespace IMGBlibrary_Core.Repack
 
             SharedMethods.DisplayLogMessage($"Image found {currentDDSfile}", true);
 
-            var imageInfo = GetImageInfo(currentDDSfile);
+            var imageInfo = GetImageInfo(currentDDSfile, gtex);
 
             if (!imageInfo.IsValid)
             {
@@ -74,7 +74,7 @@ namespace IMGBlibrary_Core.Repack
             return false;
         }
 
-        private static ImageInfo GetImageInfo(string currentDDSfile)
+        private static ImageInfo GetImageInfo(string currentDDSfile, GTEX gtex)
         {
             var imageInfo = new ImageInfo();
 
@@ -113,13 +113,19 @@ namespace IMGBlibrary_Core.Repack
                 switch (ddsFourCC)
                 {
                     case "":
-                        if (imageInfo.MipCount > 1)
+                        if (ddsReader.ReadByte() == 8)
                         {
-                            imageInfo.PixelFormatFlag = 3;
+                            imageInfo.PixelFormatFlag = 5;
+                        }
+                        else if (ddsReader.ReadByte() == 32)
+                        {
+                            imageInfo.PixelFormatFlag = gtex.ImgFormatFlag;
                         }
                         else
                         {
-                            imageInfo.PixelFormatFlag = 4;
+                            SharedMethods.DisplayLogMessage("Pixel format is not supported. skipped repacking image", true);
+                            imageInfo.IsValid = false;
+                            return imageInfo;
                         }
                         break;
 
@@ -190,19 +196,23 @@ namespace IMGBlibrary_Core.Repack
 
             switch (gtex.ImgFormatFlag)
             {
-                case 3: // R8G8B8A8
-                case 4: // R8G8B8A8 with Mips
+                case 3:
+                case 4:
                     mipSize = (uint)gtex.Height * gtex.Width * 4;
                     break;
 
-                case 24:   // DXT1
+                case 5:
+                    mipSize = (uint)gtex.Height * gtex.Width;
+                    break;
+
+                case 24:
                     gtex.Height += (ushort)((4 - gtex.Height % 4) % 4);
                     gtex.Width += (ushort)((4 - gtex.Width % 4) % 4);
                     mipSize = (uint)gtex.Height * gtex.Width * 4 / 8;
                     break;
 
-                case 25:    // DXT 3 or
-                case 26:    // DXT5
+                case 25:
+                case 26:
                     gtex.Height += (ushort)((4 - gtex.Height % 4) % 4);
                     gtex.Width += (ushort)((4 - gtex.Width % 4) % 4);
                     mipSize = (uint)gtex.Height * gtex.Width * 4 / 4;
@@ -214,7 +224,7 @@ namespace IMGBlibrary_Core.Repack
 
         private static void NextMipHeightWidth(GTEX gtex, ref ushort nextMipHeight, ref ushort nextMipWidth)
         {
-            if (gtex.ImgFormatFlag != 3)
+            if (gtex.ImgFormatFlag == 24 || gtex.ImgFormatFlag == 25 || gtex.ImgFormatFlag == 26)
             {
                 nextMipHeight = (ushort)(gtex.Height / 2);
                 gtex.Height = nextMipHeight;
@@ -233,7 +243,7 @@ namespace IMGBlibrary_Core.Repack
                 }
             }
 
-            if (gtex.ImgFormatFlag == 3)
+            if (gtex.ImgFormatFlag == 3 || gtex.ImgFormatFlag == 4 || gtex.ImgFormatFlag == 5)
             {
                 if (gtex.Height == 1)
                 {
