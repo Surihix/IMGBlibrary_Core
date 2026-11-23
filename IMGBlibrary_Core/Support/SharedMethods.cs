@@ -42,7 +42,7 @@ namespace IMGBlibrary_Core.Support
             const string gtexChunkMagic = "GTEX";
 
             var readBuffer = new byte[4];
-            var limitPos = inImgHeaderBlockData.Length - 3;
+            var limitPos = inImgHeaderBlockData.Length - 4;
 
             for (int i = 0; i < inImgHeaderBlockData.Length; i++)
             {
@@ -55,6 +55,10 @@ namespace IMGBlibrary_Core.Support
                         offset = i;
                         break;
                     }
+                }
+                else
+                {
+                    break;
                 }
             }
 
