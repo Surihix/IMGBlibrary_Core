@@ -6,32 +6,37 @@ namespace IMGBlibrary_Core.Load
 {
     internal class IMGBLoadTypes
     {
+        public static byte[] IMGBData = Array.Empty<byte>();
+
         #region Classic type
-        public static byte[] LoadClassic(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream, bool showLoadLog)
+        public static byte[] LoadClassic(byte[] imgHeaderBlockData, GTEX gtex, bool showLoadLog)
         {
             var loadedData = Array.Empty<byte>();
 
-            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
+            using (var imgbStream = new MemoryStream(IMGBData))
             {
-                using (var ddsStream = new MemoryStream())
+                using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
                 {
-                    using (var ddsWriter = new BinaryWriter(ddsStream))
+                    using (var ddsStream = new MemoryStream())
                     {
-                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
-
-                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-
-                        for (int i = 0; i < gtex.MipCount; i++)
+                        using (var ddsWriter = new BinaryWriter(ddsStream))
                         {
-                            var mipStart = gtexReader.ReadBytesUInt32(true);
-                            var mipSize = gtexReader.ReadBytesUInt32(true);
-                            var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
+                            ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
 
-                            ddsWriter.Write(mipData);
+                            gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
+
+                            for (int i = 0; i < gtex.MipCount; i++)
+                            {
+                                var mipStart = gtexReader.ReadBytesUInt32(true);
+                                var mipSize = gtexReader.ReadBytesUInt32(true);
+                                var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
+
+                                ddsWriter.Write(mipData);
+                            }
+
+                            ddsStream.Position = 0;
+                            loadedData = ddsStream.ToArray();
                         }
-
-                        ddsStream.Position = 0;
-                        loadedData = ddsStream.ToArray();
                     }
                 }
             }
@@ -43,31 +48,34 @@ namespace IMGBlibrary_Core.Load
 
 
         #region Cubemap type
-        public static byte[] LoadCubemap(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream, bool showLoadLog)
+        public static byte[] LoadCubemap(byte[] imgHeaderBlockData, GTEX gtex, bool showLoadLog)
         {
             var loadedData = Array.Empty<byte>();
 
-            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
+            using (var imgbStream = new MemoryStream(IMGBData))
             {
-                using (var ddsStream = new MemoryStream())
+                using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
                 {
-                    using (var ddsWriter = new BinaryWriter(ddsStream))
+                    using (var ddsStream = new MemoryStream())
                     {
-                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
-
-                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-
-                        for (int i = 0; i < gtex.MipCount * 6; i++)
+                        using (var ddsWriter = new BinaryWriter(ddsStream))
                         {
-                            var mipStart = gtexReader.ReadBytesUInt32(true);
-                            var mipSize = gtexReader.ReadBytesUInt32(true);
-                            var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
+                            ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
 
-                            ddsWriter.Write(mipData);
+                            gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
+
+                            for (int i = 0; i < gtex.MipCount * 6; i++)
+                            {
+                                var mipStart = gtexReader.ReadBytesUInt32(true);
+                                var mipSize = gtexReader.ReadBytesUInt32(true);
+                                var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
+
+                                ddsWriter.Write(mipData);
+                            }
+
+                            ddsStream.Position = 0;
+                            loadedData = ddsStream.ToArray();
                         }
-
-                        ddsStream.Position = 0;
-                        loadedData = ddsStream.ToArray();
                     }
                 }
             }
@@ -76,30 +84,33 @@ namespace IMGBlibrary_Core.Load
             return loadedData;
         }
 
-        public static byte[] LoadCubemapX360(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream, bool showLoadLog)
+        public static byte[] LoadCubemapX360(byte[] imgHeaderBlockData, GTEX gtex, bool showLoadLog)
         {
             var loadedData = Array.Empty<byte>();
 
-            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
+            using (var imgbStream = new MemoryStream(IMGBData))
             {
-                using (var ddsStream = new MemoryStream())
+                using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
                 {
-                    using (var ddsWriter = new BinaryWriter(ddsStream))
+                    using (var ddsStream = new MemoryStream())
                     {
-                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-                        var mipStart = gtexReader.ReadBytesUInt32(true);
-                        var mipSize = gtexReader.ReadBytesUInt32(true);
+                        using (var ddsWriter = new BinaryWriter(ddsStream))
+                        {
+                            gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
+                            var mipStart = gtexReader.ReadBytesUInt32(true);
+                            var mipSize = gtexReader.ReadBytesUInt32(true);
 
-                        var cubemapBaseBlock = new byte[mipSize];
-                        _ = imgbStream.Position = mipStart;
-                        _ = imgbStream.Read(cubemapBaseBlock, 0, (int)mipSize);
+                            var cubemapBaseBlock = new byte[mipSize];
+                            _ = imgbStream.Position = mipStart;
+                            _ = imgbStream.Read(cubemapBaseBlock, 0, (int)mipSize);
 
-                        // fix later
-                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
-                        ddsWriter.Write(cubemapBaseBlock);
+                            // fix later
+                            ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+                            ddsWriter.Write(cubemapBaseBlock);
 
-                        ddsStream.Position = 0;
-                        loadedData = ddsStream.ToArray();
+                            ddsStream.Position = 0;
+                            loadedData = ddsStream.ToArray();
+                        }
                     }
                 }
             }
@@ -111,27 +122,30 @@ namespace IMGBlibrary_Core.Load
 
 
         #region Volumemap type
-        public static byte[] LoadVolumemap(byte[] imgHeaderBlockData, GTEX gtex, FileStream imgbStream, bool showLoadLog)
+        public static byte[] LoadVolumemap(byte[] imgHeaderBlockData, GTEX gtex, bool showLoadLog)
         {
             var loadedData = Array.Empty<byte>();
 
-            using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
+            using (var imgbStream = new MemoryStream(IMGBData))
             {
-                using (var ddsStream = new MemoryStream())
+                using (var gtexReader = new BinaryReader(new MemoryStream(imgHeaderBlockData)))
                 {
-                    using (var ddsWriter = new BinaryWriter(ddsStream))
+                    using (var ddsStream = new MemoryStream())
                     {
-                        ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
+                        using (var ddsWriter = new BinaryWriter(ddsStream))
+                        {
+                            ddsWriter.Write(DDSHelpers.GetDDSHeader(gtex));
 
-                        gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
-                        var mipStart = gtexReader.ReadBytesUInt32(true);
-                        var mipSize = gtexReader.ReadBytesUInt32(true);
-                        var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
+                            gtexReader.BaseStream.Position = gtex.GTEXOffset + gtex.MipInfoTableOffset;
+                            var mipStart = gtexReader.ReadBytesUInt32(true);
+                            var mipSize = gtexReader.ReadBytesUInt32(true);
+                            var mipData = GetMipData((int)mipSize, imgbStream, mipStart, gtex);
 
-                        ddsWriter.Write(mipData);
+                            ddsWriter.Write(mipData);
 
-                        ddsStream.Position = 0;
-                        loadedData = ddsStream.ToArray();
+                            ddsStream.Position = 0;
+                            loadedData = ddsStream.ToArray();
+                        }
                     }
                 }
             }
@@ -143,7 +157,7 @@ namespace IMGBlibrary_Core.Load
 
 
         #region Shared
-        private static byte[] GetMipData(int mipSize, FileStream imgbStream, uint mipStart, GTEX gtex)
+        private static byte[] GetMipData(int mipSize, MemoryStream imgbStream, uint mipStart, GTEX gtex)
         {
             var rawMipData = new byte[mipSize];
 

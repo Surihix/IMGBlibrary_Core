@@ -1,4 +1,5 @@
-﻿using IMGBlibrary_Core.Support;
+﻿using IMGBlibrary_Core.Load;
+using IMGBlibrary_Core.Support;
 using static IMGBlibrary_Core.Support.IMGBFlags;
 
 namespace IMGBlibrary_Core.Unpack
@@ -17,6 +18,11 @@ namespace IMGBlibrary_Core.Unpack
         /// <param name="showLog">Determine whether to show more messages related to this method's process.</param>
         public static void UnpackIMGB(string imgHeaderBlockFile, string imgbFile, string extractIMGBdir, bool showLog)
         {
+            if (IMGBLoadTypes.IMGBData.Length == 0)
+            {
+                IMGBLoadTypes.IMGBData = File.ReadAllBytes(imgbFile);
+            }
+
             var gtex = SharedMethods.GetGTEXInfo(File.ReadAllBytes(imgHeaderBlockFile), Path.GetFileName(imgHeaderBlockFile));
 
             if (!gtex.IsValid)
@@ -39,38 +45,33 @@ namespace IMGBlibrary_Core.Unpack
 
             SharedMethods.LoadGTEXFlags(gtex);
 
-            // Open the IMGB file and start extracting
-            // the images according to the image type
-            using (var imgbStream = new FileStream(imgbFile, FileMode.Open, FileAccess.ReadWrite))
+            if (gtex.Platform == Platforms.ps3)
             {
-                if (gtex.Platform == Platforms.ps3)
-                {
-                    PS3Helpers.MipWidth = gtex.Width;
-                    PS3Helpers.MipHeight = gtex.Height;
-                }
+                PS3Helpers.MipWidth = gtex.Width;
+                PS3Helpers.MipHeight = gtex.Height;
+            }
 
-                if (gtex.Platform == Platforms.x360)
-                {
-                    X360Helpers.MipWidth = gtex.Width;
-                    X360Helpers.MipHeight = gtex.Height;
-                }
+            if (gtex.Platform == Platforms.x360)
+            {
+                X360Helpers.MipWidth = gtex.Width;
+                X360Helpers.MipHeight = gtex.Height;
+            }
 
-                switch (gtex.ImgType)
-                {
-                    case ImageTypes.classic:
-                    case ImageTypes.classic_swizzled:
-                        IMGBUnpackTypes.UnpackClassic(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        break;
+            switch (gtex.ImgType)
+            {
+                case ImageTypes.classic:
+                case ImageTypes.classic_swizzled:
+                    IMGBUnpackTypes.UnpackClassic(imgHeaderBlockFile, extractIMGBdir, gtex);
+                    break;
 
-                    case ImageTypes.cubemap:
-                    case ImageTypes.cubemap_swizzled:
-                        IMGBUnpackTypes.UnpackCubemap(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        break;
+                case ImageTypes.cubemap:
+                case ImageTypes.cubemap_swizzled:
+                    IMGBUnpackTypes.UnpackCubemap(imgHeaderBlockFile, extractIMGBdir, gtex);
+                    break;
 
-                    case ImageTypes.volumemap:
-                        IMGBUnpackTypes.UnpackVolumemap(imgHeaderBlockFile, extractIMGBdir, gtex, imgbStream);
-                        break;
-                }
+                case ImageTypes.volumemap:
+                    IMGBUnpackTypes.UnpackVolumemap(imgHeaderBlockFile, extractIMGBdir, gtex);
+                    break;
             }
         }
     }
