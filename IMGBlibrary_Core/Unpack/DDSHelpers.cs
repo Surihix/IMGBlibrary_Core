@@ -27,7 +27,15 @@ namespace IMGBlibrary_Core.Unpack
             var dwPitchOrLinearSize = GetdwPitchOrLinearSize(gtex);
             Array.ConstrainedCopy(dwPitchOrLinearSize, 0, ddsHeader, 20, 4);
 
-            uint dwDepthVal = (uint)(gtex.ImgTypeFlag == 2 ? gtex.Depth : 0);
+            uint dwDepthVal;
+            if (gtex.Version == 1)
+            {
+                dwDepthVal = (uint)(gtex.ImgTypeFlag == 2 ? gtex.UnkFlag : 0);
+            }
+            else
+            {
+                dwDepthVal = (uint)(gtex.ImgTypeFlag == 2 ? gtex.Depth : 0);
+            }
             var dwDepth = BitConverter.GetBytes(dwDepthVal);
             Array.ConstrainedCopy(dwDepth, 0, ddsHeader, 24, 4);
 
