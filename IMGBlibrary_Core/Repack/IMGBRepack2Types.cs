@@ -394,11 +394,6 @@ namespace IMGBlibrary_Core.Repack
         #region Volumemap type
         private static void RepackVolumemap(string imgHeaderBlockFile, string currentDDSfile, GTEX gtex, FileStream imgbStream)
         {
-            if (gtex.MipCount > 1)
-            {
-                SharedMethods.DisplayLogMessage("Detected more than one mip. mip 0 alone would be repacked", true);
-            }
-
             UpdateHeader(imgHeaderBlockFile, gtex);
 
             using (BinaryReader ddsReader = new BinaryReader(File.Open(currentDDSfile, FileMode.Open, FileAccess.Read)))

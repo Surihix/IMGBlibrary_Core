@@ -14,6 +14,7 @@ namespace IMGBlibrary_Core.Support
             // Remove this after padding is sorted
             if (adjustedMipData.Length == 0)
             {
+                adjustedMipData = rawMipData;
                 if (gtex.MipCount > 1)
                 {
                     SetNextMipHeightWidth(gtex);

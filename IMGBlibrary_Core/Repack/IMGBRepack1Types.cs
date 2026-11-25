@@ -112,11 +112,6 @@ namespace IMGBlibrary_Core.Repack
         #region Volumemap type
         public static void RepackVolumemap(string imgHeaderBlockFile, string extractedIMGBdir, GTEX gtex, FileStream imgbStream)
         {
-            if (gtex.MipCount > 1)
-            {
-                SharedMethods.DisplayLogMessage("Detected more than one mip. mip 0 alone would be repacked", true);
-            }
-
             var currentDDSfile = Path.Combine(extractedIMGBdir, gtex.ImageName + "_volume.dds");
 
             if (!File.Exists(currentDDSfile))
@@ -209,7 +204,8 @@ namespace IMGBlibrary_Core.Repack
                 switch (ddsFourCC)
                 {
                     case "":
-                        isValidPixelFormat = ddsReader.ReadByte() == 32;
+                        var fmtValRead = ddsReader.ReadByte();
+                        isValidPixelFormat = fmtValRead == 32 || fmtValRead == 8;
                         break;
 
                     case "DXT1":
