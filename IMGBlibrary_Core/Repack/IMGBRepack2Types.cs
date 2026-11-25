@@ -113,11 +113,13 @@ namespace IMGBlibrary_Core.Repack
                 switch (ddsFourCC)
                 {
                     case "":
-                        if (ddsReader.ReadByte() == 8)  // R8
+                        var fmtValRead = ddsReader.ReadByte();
+
+                        if (fmtValRead == 8)  // R8
                         {
                             imageInfo.PixelFormatFlag = 5;
                         }
-                        else if (ddsReader.ReadByte() == 32)    // R8G8B8A8 and R8G8B8A8_Type3
+                        else if (fmtValRead == 32)    // R8G8B8A8 and R8G8B8A8_Type3
                         {
                             if (imageInfo.PixelFormatFlag == 3 || imageInfo.PixelFormatFlag == 4)
                             {
