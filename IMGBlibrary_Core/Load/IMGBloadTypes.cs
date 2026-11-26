@@ -171,11 +171,7 @@ namespace IMGBlibrary_Core.Load
 
             if (gtex.Platform == Platforms.x360)
             {
-                // hack remove this later
-                if (gtex.ImgFormat != ImageFormats.r8)
-                {
-                    rawMipData = X360Helpers.ProcessX360ImageData(gtex, rawMipData);
-                }
+                rawMipData = X360Helpers.ProcessX360ImageData(gtex, rawMipData);
             }
 
             return rawMipData;

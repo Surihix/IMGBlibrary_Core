@@ -17,8 +17,10 @@ namespace IMGBlibrary_Core.Support
         public ushort Height;
         public ushort Depth;
         public uint MipInfoTableOffset;
+        public uint MipDataStartOffset;
         public Platforms Platform;
         public ImageFormats ImgFormat;
         public ImageTypes ImgType;
+        public bool IsMipPackedAfterGTEX;
     }
 }

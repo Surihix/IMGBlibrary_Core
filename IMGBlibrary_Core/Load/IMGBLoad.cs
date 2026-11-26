@@ -58,6 +58,18 @@ namespace IMGBlibrary_Core.Load
                 X360Helpers.MipHeight = gtex.Height;
             }
 
+            if (gtex.IsMipPackedAfterGTEX)
+            {
+                using (var mipDataStream = new MemoryStream(imgHeaderBlockData))
+                {
+                    _ = mipDataStream.Seek(gtex.GTEXOffset + gtex.MipDataStartOffset, SeekOrigin.Begin);
+                    var mipDataSize = mipDataStream.Length - mipDataStream.Position;
+
+                    IMGBLoadTypes.IMGBData = new byte[(int)mipDataSize];
+                    _ = mipDataStream.Read(IMGBLoadTypes.IMGBData, 0, IMGBLoadTypes.IMGBData.Length);
+                }
+            }
+
             switch (gtex.ImgType)
             {
                 case ImageTypes.classic:
@@ -81,6 +93,11 @@ namespace IMGBlibrary_Core.Load
                 case ImageTypes.volumemap:
                     ddsData = IMGBLoadTypes.LoadVolumemap(imgHeaderBlockData, gtex, true);
                     break;
+            }
+
+            if (gtex.IsMipPackedAfterGTEX)
+            {
+                IMGBLoadTypes.IMGBData = Array.Empty<byte>();
             }
 
             return ddsData;

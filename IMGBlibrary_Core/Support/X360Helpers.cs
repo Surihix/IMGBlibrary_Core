@@ -9,42 +9,56 @@ namespace IMGBlibrary_Core.Support
 
         public static byte[] ProcessX360ImageData(GTEX gtex, byte[] rawMipData)
         {
-            var adjustedMipData = AdjustMipData(gtex, rawMipData);
-
-            // Remove this after padding is sorted
-            if (adjustedMipData.Length == 0)
+            if (gtex.IsMipPackedAfterGTEX)
             {
-                adjustedMipData = rawMipData;
+                var adjustedMipData = rawMipData;
+
+                if (gtex.ImgFormat != ImageFormats.r8)
+                {
+                    adjustedMipData = XEndian16(rawMipData);
+                }
+                 
+                return adjustedMipData;
+            }
+            else
+            {
+                var adjustedMipData = AdjustMipData(gtex, rawMipData);
+
+                // Remove this after padding is sorted
+                if (adjustedMipData.Length == 0)
+                {
+                    adjustedMipData = rawMipData;
+                    if (gtex.MipCount > 1)
+                    {
+                        SetNextMipHeightWidth(gtex);
+                    }
+
+                    return adjustedMipData;
+                }
+
+                var isSwizzled = (gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled) && gtex.ImgFormat != ImageFormats.r8;
+
+                if (isSwizzled)
+                {
+                    adjustedMipData = ConvertToLinearTexture(adjustedMipData, gtex);
+                }
+
+                adjustedMipData = XEndian16(adjustedMipData);
+
+                var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8_type3 || gtex.ImgFormat == ImageFormats.r8g8b8a8;
+
+                if (colorAdjust)
+                {
+                    adjustedMipData = AdjustColor(adjustedMipData);
+                }
+
                 if (gtex.MipCount > 1)
                 {
                     SetNextMipHeightWidth(gtex);
                 }
 
                 return adjustedMipData;
-            }
-
-            var isSwizzled = (gtex.ImgType == ImageTypes.classic_swizzled || gtex.ImgType == ImageTypes.cubemap_swizzled) && gtex.ImgFormat != ImageFormats.r8;
-
-            if (isSwizzled)
-            {
-                adjustedMipData = ConvertToLinearTexture(adjustedMipData, gtex);
-            }
-
-            adjustedMipData = XEndian16(adjustedMipData);
-
-            var colorAdjust = gtex.ImgFormat == ImageFormats.r8g8b8a8_type3 || gtex.ImgFormat == ImageFormats.r8g8b8a8;
-
-            if (colorAdjust)
-            {
-                adjustedMipData = AdjustColor(adjustedMipData);
-            }
-
-            if (gtex.MipCount > 1)
-            {
-                SetNextMipHeightWidth(gtex);
-            }
-
-            return adjustedMipData;
+            }          
         }
 
         // fix later
@@ -163,6 +177,11 @@ namespace IMGBlibrary_Core.Support
                     blockSize = 1;
                     texelPitch = 4;
                     break;
+
+                case ImageFormats.r8:
+                    blockSize = 1;
+                    texelPitch = 1;
+                    break;
             }
 
             int blockWidth = MipWidth / blockSize;
@@ -240,6 +259,7 @@ namespace IMGBlibrary_Core.Support
             {
                 case ImageFormats.r8g8b8a8:
                 case ImageFormats.r8g8b8a8_type3:
+                case ImageFormats.r8:
                     if (MipHeight == 1)
                     {
                         MipHeight = 1;

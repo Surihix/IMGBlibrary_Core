@@ -80,6 +80,12 @@ namespace IMGBlibrary_Core.Support
                 gtex.Height = gtexReader.ReadBytesUInt16(true);
                 gtex.Depth = gtexReader.ReadBytesUInt16(true);
                 gtex.MipInfoTableOffset = gtexReader.ReadBytesUInt32(true);
+                gtex.MipDataStartOffset = gtexReader.ReadBytesUInt32(true);
+
+                if (gtex.MipDataStartOffset != 0)
+                {
+                    gtex.IsMipPackedAfterGTEX = true;
+                }
             }
         }
 
